@@ -81,12 +81,27 @@ const Admin = () => {
     if (!isAdmin) return;
 
     const fetchData = async () => {
-      const [uRes, rRes] = await Promise.all([
+      const [uRes, rRes, tRes] = await Promise.all([
         supabase.from("updates").select("*").order("created_at", { ascending: false }),
         supabase.from("reviews").select("*").order("created_at", { ascending: false }),
+        supabase.from("tickets").select("*").order("created_at", { ascending: false }),
       ]);
       if (uRes.data) setUpdates(uRes.data as Update[]);
       if (rRes.data) setReviews(rRes.data as Review[]);
+      if (tRes.data) {
+        setAllTickets(tRes.data);
+        // Load profiles for ticket users
+        const ids = new Set<string>();
+        tRes.data.forEach((t: any) => { ids.add(t.user_id); if (t.assigned_staff_id) ids.add(t.assigned_staff_id); });
+        if (ids.size > 0) {
+          const { data: profs } = await supabase.from("profiles").select("*").in("id", Array.from(ids));
+          if (profs) {
+            const map: Record<string, any> = {};
+            profs.forEach((p: any) => { map[p.id] = p; });
+            setTicketProfiles(map);
+          }
+        }
+      }
     };
     fetchData();
   }, [user, authLoading, isAdmin, navigate]);
