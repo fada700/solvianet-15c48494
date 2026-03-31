@@ -57,12 +57,23 @@ const Admin = () => {
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [publishing, setPublishing] = useState(false);
-  const [activeTab, setActiveTab] = useState<"dashboard" | "updates" | "reviews">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "updates" | "reviews" | "tickets">("dashboard");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ type: "update" | "review"; id: string; name: string } | null>(null);
   const [editingUpdate, setEditingUpdate] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
+
+  // Ticket management state
+  const [allTickets, setAllTickets] = useState<any[]>([]);
+  const [ticketSearch, setTicketSearch] = useState("");
+  const [ticketFilter, setTicketFilter] = useState<string>("all");
+  const [selectedTicket, setSelectedTicket] = useState<any | null>(null);
+  const [ticketMessages, setTicketMessages] = useState<any[]>([]);
+  const [ticketProfiles, setTicketProfiles] = useState<Record<string, any>>({});
+  const [staffMsg, setStaffMsg] = useState("");
+  const [sendingStaffMsg, setSendingStaffMsg] = useState(false);
+  const ticketMsgEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (authLoading) return;
