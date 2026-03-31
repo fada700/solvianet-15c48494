@@ -609,6 +609,126 @@ const Admin = () => {
           </div>
         )}
 
+        {/* Tickets Tab */}
+        {activeTab === "tickets" && (
+          <div className="space-y-4">
+            {/* Selected ticket chat view */}
+            {selectedTicket ? (
+              <div>
+                <button onClick={() => setSelectedTicket(null)} className="flex items-center gap-2 mb-4 text-sm font-heading font-bold text-muted-foreground hover:text-foreground transition">
+                  ← Volver a la lista
+                </button>
+                <div className="card-medieval p-4 mb-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-heading font-bold">Ticket #{selectedTicket.ticket_number}: {selectedTicket.subject}</h3>
+                    <span className={`text-sm font-heading font-bold ${STATUS_LABELS[selectedTicket.status]?.color}`}>
+                      {STATUS_LABELS[selectedTicket.status]?.label}
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground font-body mb-2">{selectedTicket.description}</p>
+                  <p className="text-xs text-muted-foreground font-body">Categoría: {CATEGORY_LABELS[selectedTicket.category]} — Usuario: {ticketProfiles[selectedTicket.user_id]?.display_name || "Desconocido"}</p>
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {selectedTicket.status !== "in_review" && selectedTicket.status !== "closed" && (
+                      <button onClick={() => updateTicketStatus(selectedTicket.id, "in_review")} className="px-3 py-1 bg-accent text-accent-foreground rounded-lg text-xs font-heading font-bold">Tomar / En Revisión</button>
+                    )}
+                    {selectedTicket.status !== "waiting_response" && selectedTicket.status !== "closed" && (
+                      <button onClick={() => updateTicketStatus(selectedTicket.id, "waiting_response")} className="px-3 py-1 bg-primary text-primary-foreground rounded-lg text-xs font-heading font-bold">Esperando Respuesta</button>
+                    )}
+                    {selectedTicket.status !== "closed" && (
+                      <button onClick={() => updateTicketStatus(selectedTicket.id, "closed")} className="px-3 py-1 bg-muted text-muted-foreground rounded-lg text-xs font-heading font-bold">Cerrar Ticket</button>
+                    )}
+                  </div>
+                </div>
+                {/* Chat */}
+                <div className="card-medieval overflow-hidden">
+                  <div className="h-[350px] overflow-y-auto p-4 space-y-3">
+                    {ticketMessages.length === 0 && <p className="text-center text-muted-foreground text-sm font-body py-8">Sin mensajes.</p>}
+                    {ticketMessages.map((msg: any) => {
+                      const isOwner = msg.user_id === selectedTicket.user_id;
+                      const profile = ticketProfiles[msg.user_id];
+                      return (
+                        <div key={msg.id} className={`flex gap-2 ${isOwner ? "justify-start" : "justify-end"}`}>
+                          {isOwner && <img src={profile?.avatar_url || "/placeholder.svg"} alt="" className="w-8 h-8 rounded-full border border-primary flex-shrink-0 mt-1" />}
+                          <div className={`max-w-[70%] rounded-xl p-3 ${isOwner ? "bg-muted border border-border" : "bg-primary/15 border border-primary/30"}`}>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-xs font-heading font-bold">{profile?.display_name || "Usuario"}</span>
+                              {!isOwner && <span className="text-[10px] bg-accent/20 text-accent px-1.5 py-0.5 rounded font-body font-bold">STAFF</span>}
+                            </div>
+                            <p className="text-sm font-body">{msg.message}</p>
+                            <p className="text-[10px] text-muted-foreground mt-1 font-body">
+                              {new Date(msg.created_at).toLocaleDateString("es-ES", { day: "numeric", month: "short" })} — {new Date(msg.created_at).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+                            </p>
+                          </div>
+                          {!isOwner && <img src={profile?.avatar_url || "/placeholder.svg"} alt="" className="w-8 h-8 rounded-full border border-primary flex-shrink-0 mt-1" />}
+                        </div>
+                      );
+                    })}
+                    <div ref={ticketMsgEndRef} />
+                  </div>
+                  {selectedTicket.status !== "closed" && (
+                    <form onSubmit={handleStaffSend} className="p-3 border-t border-border flex gap-2">
+                      <input value={staffMsg} onChange={(e) => setStaffMsg(e.target.value)} placeholder="Responder como staff..." className="flex-1 px-4 py-2 rounded-xl border-2 border-border bg-background font-body text-sm focus:border-primary focus:outline-none transition" />
+                      <button type="submit" disabled={sendingStaffMsg || !staffMsg.trim()} className="px-4 py-2 bg-primary text-primary-foreground rounded-xl font-heading font-bold text-sm hover:opacity-90 transition disabled:opacity-50">
+                        <Send size={16} />
+                      </button>
+                    </form>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Filters and search */}
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="relative flex-1">
+                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <input value={ticketSearch} onChange={(e) => setTicketSearch(e.target.value)} placeholder="Buscar: Ticket 1..." className="w-full pl-10 pr-4 py-2.5 rounded-xl border-2 border-border bg-card font-body text-sm focus:border-primary focus:outline-none transition" />
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { key: "all", label: "Todos" },
+                      { key: "open", label: "Abiertos" },
+                      { key: "in_review", label: "En Revisión" },
+                      { key: "waiting_response", label: "Esperando" },
+                      { key: "closed", label: "Cerrados" },
+                    ].map((f) => (
+                      <button key={f.key} onClick={() => setTicketFilter(f.key)} className={`px-3 py-2 rounded-lg text-xs font-heading font-bold border-2 transition ${ticketFilter === f.key ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border text-muted-foreground hover:border-primary/50"}`}>
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Ticket list */}
+                <div className="space-y-3">
+                  {filteredTickets.map((t: any) => (
+                    <div key={t.id} className="card-medieval p-4 cursor-pointer hover:border-primary/50 transition" onClick={() => openTicketChat(t)}>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-heading font-bold text-sm">Ticket #{t.ticket_number}</h4>
+                          <p className="text-xs text-muted-foreground font-body">{t.subject}</p>
+                        </div>
+                        <div className="text-right">
+                          <span className={`text-xs font-heading font-bold ${STATUS_LABELS[t.status]?.color}`}>{STATUS_LABELS[t.status]?.label}</span>
+                          <p className="text-[10px] text-muted-foreground font-body">{CATEGORY_LABELS[t.category]}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground font-body">
+                        <img src={ticketProfiles[t.user_id]?.avatar_url || "/placeholder.svg"} alt="" className="w-5 h-5 rounded-full" />
+                        <span>{ticketProfiles[t.user_id]?.display_name || "Usuario"}</span>
+                        <span>•</span>
+                        <span>{new Date(t.created_at).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" })}</span>
+                      </div>
+                    </div>
+                  ))}
+                  {filteredTickets.length === 0 && (
+                    <p className="text-center text-muted-foreground font-body py-8">No se encontraron tickets.</p>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
         {/* Delete confirmation modal */}
         <AnimatePresence>
           {deleteTarget && (
