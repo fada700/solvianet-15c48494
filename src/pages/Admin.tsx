@@ -253,10 +253,95 @@ const Admin = () => {
     return `Hace ${days}d`;
   };
 
+  // Ticket management helpers
+  const STATUS_LABELS: Record<string, { label: string; color: string }> = {
+    open: { label: "Abierto", color: "text-secondary" },
+    in_review: { label: "En Revisión", color: "text-accent" },
+    waiting_response: { label: "Esperando Respuesta", color: "text-primary" },
+    closed: { label: "Cerrado", color: "text-muted-foreground" },
+  };
+
+  const CATEGORY_LABELS: Record<string, string> = {
+    reportar_jugador: "Reportar Jugador",
+    problema_tecnico: "Problema Técnico",
+    dudas_compra: "Dudas de Compra",
+    apelacion_sancion: "Apelación de Sanción",
+  };
+
+  const filteredTickets = allTickets.filter((t) => {
+    const matchFilter = ticketFilter === "all" || t.status === ticketFilter;
+    const matchSearch = !ticketSearch || `Ticket ${t.ticket_number}`.toLowerCase().includes(ticketSearch.toLowerCase()) || t.subject.toLowerCase().includes(ticketSearch.toLowerCase());
+    return matchFilter && matchSearch;
+  });
+
+  const openTicketChat = async (t: any) => {
+    setSelectedTicket(t);
+    const { data: msgs } = await supabase.from("ticket_messages").select("*").eq("ticket_id", t.id).order("created_at", { ascending: true });
+    if (msgs) {
+      setTicketMessages(msgs);
+      const newIds = new Set<string>();
+      msgs.forEach((m: any) => { if (!ticketProfiles[m.user_id]) newIds.add(m.user_id); });
+      if (newIds.size > 0) {
+        const { data: profs } = await supabase.from("profiles").select("*").in("id", Array.from(newIds));
+        if (profs) {
+          const map = { ...ticketProfiles };
+          profs.forEach((p: any) => { map[p.id] = p; });
+          setTicketProfiles(map);
+        }
+      }
+    }
+    // Subscribe to realtime
+    setTimeout(() => ticketMsgEndRef.current?.scrollIntoView({ behavior: "smooth" }), 200);
+  };
+
+  // Realtime for selected ticket
+  useEffect(() => {
+    if (!selectedTicket) return;
+    const channel = supabase
+      .channel(`admin-ticket-${selectedTicket.id}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "ticket_messages", filter: `ticket_id=eq.${selectedTicket.id}` }, async (payload) => {
+        const newMsg = payload.new;
+        setTicketMessages((prev) => [...prev, newMsg]);
+        if (!ticketProfiles[newMsg.user_id]) {
+          const { data: p } = await supabase.from("profiles").select("*").eq("id", newMsg.user_id).maybeSingle();
+          if (p) setTicketProfiles((prev: any) => ({ ...prev, [p.id]: p }));
+        }
+        setTimeout(() => ticketMsgEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [selectedTicket?.id]);
+
+  const handleStaffSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !selectedTicket || !staffMsg.trim() || sendingStaffMsg) return;
+    setSendingStaffMsg(true);
+    await supabase.from("ticket_messages").insert({ ticket_id: selectedTicket.id, user_id: user.id, message: staffMsg.trim() });
+    setStaffMsg("");
+    setSendingStaffMsg(false);
+  };
+
+  const updateTicketStatus = async (ticketId: string, newStatus: string) => {
+    const updateData: any = { status: newStatus, updated_at: new Date().toISOString() };
+    if (newStatus === "in_review" || newStatus === "waiting_response") {
+      updateData.assigned_staff_id = user!.id;
+    }
+    if (newStatus === "closed") {
+      updateData.closed_at = new Date().toISOString();
+    }
+    const { error } = await supabase.from("tickets").update(updateData).eq("id", ticketId);
+    if (!error) {
+      setAllTickets((prev) => prev.map((t) => t.id === ticketId ? { ...t, ...updateData } : t));
+      if (selectedTicket?.id === ticketId) setSelectedTicket((prev: any) => prev ? { ...prev, ...updateData } : prev);
+      toast.success(`Ticket actualizado a "${STATUS_LABELS[newStatus]?.label}"`);
+    }
+  };
+
   const tabs = [
     { key: "dashboard" as const, icon: BarChart3, label: "Dashboard" },
     { key: "updates" as const, icon: FileText, label: `Actualizaciones (${updates.length})` },
     { key: "reviews" as const, icon: MessageSquare, label: `Reseñas (${reviews.length})` },
+    { key: "tickets" as const, icon: Ticket, label: `Tickets (${allTickets.length})` },
   ];
 
   return (
