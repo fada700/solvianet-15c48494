@@ -4,8 +4,9 @@ import Layout from "@/components/Layout";
 import {
   Plus, Trash2, LogOut, Star, MessageSquare, ShieldAlert, Upload, X,
   Image as ImageIcon, Edit2, Check, XCircle, BarChart3, Users, FileText, TrendingUp,
-  Clock, Wifi, WifiOff, Activity, Award, Eye, Ticket, UserCheck, MessageSquare as MsgIcon, Send, Search,
+  Clock, Wifi, WifiOff, Activity, Award, Eye, Ticket, UserCheck, Send, Search,
 } from "lucide-react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useServerStatus } from "@/hooks/useServerStatus";
