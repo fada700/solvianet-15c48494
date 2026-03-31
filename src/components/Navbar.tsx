@@ -9,6 +9,7 @@ const navLinks = [
   { name: "Actualizaciones", path: "/actualizaciones", external: false },
   { name: "Tienda", path: "https://tienda.solvianmc.net", external: true },
   { name: "Valoraciones", path: "/valoraciones", external: false },
+  { name: "Tickets", path: "/tickets", external: false },
   { name: "Staff", path: "/staff", external: false },
   { name: "Discord", path: "/discord", external: false },
   { name: "Votar", path: "/votar", external: false },
