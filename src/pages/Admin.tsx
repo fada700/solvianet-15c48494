@@ -125,6 +125,7 @@ const Admin = () => {
     return () => { supabase.removeChannel(channel); };
   }, [selectedTicket?.id]);
 
+  if (authLoading) {
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-[60vh]">
