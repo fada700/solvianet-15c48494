@@ -1,0 +1,534 @@
+import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import Layout from "@/components/Layout";
+import {
+  Plus, Trash2, LogOut, Star, MessageSquare, ShieldAlert, Upload, X,
+  Image as ImageIcon, Edit2, Check, XCircle, BarChart3, Users, FileText, TrendingUp,
+  Clock, Wifi, WifiOff, Activity, Award, Eye,
+} from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useServerStatus } from "@/hooks/useServerStatus";
+import { motion, AnimatePresence } from "framer-motion";
+
+const GAME_CATEGORIES = [
+  { id: "gens", label: "Gens" },
+  { id: "survival", label: "Survival" },
+  { id: "arcade", label: "Arcade Games" },
+];
+
+interface Update {
+  id: string;
+  title: string;
+  date: string;
+  content: string;
+  category: string;
+  update_number: number;
+  images: string[];
+  created_at: string;
+}
+
+interface Review {
+  id: string;
+  name: string;
+  stars: number;
+  comment: string;
+  date: string;
+  created_at: string;
+}
+
+const StatCard = ({ icon: Icon, value, label, color = "text-primary" }: { icon: any; value: string | number; label: string; color?: string }) => (
+  <div className="card-medieval p-4 text-center">
+    <Icon className={`mx-auto mb-1 ${color}`} size={24} />
+    <p className="font-heading font-bold text-xl">{value}</p>
+    <p className="text-muted-foreground text-xs font-body">{label}</p>
+  </div>
+);
+
+const Admin = () => {
+  const navigate = useNavigate();
+  const { user, loading: authLoading, isAdmin, signOut } = useAuth();
+  const server = useServerStatus();
+  const [updates, setUpdates] = useState<Update[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [category, setCategory] = useState("gens");
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [publishing, setPublishing] = useState(false);
+  const [activeTab, setActiveTab] = useState<"dashboard" | "updates" | "reviews">("dashboard");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ type: "update" | "review"; id: string; name: string } | null>(null);
+  const [editingUpdate, setEditingUpdate] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editContent, setEditContent] = useState("");
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) { navigate("/login"); return; }
+    if (!isAdmin) return;
+
+    const fetchData = async () => {
+      const [uRes, rRes] = await Promise.all([
+        supabase.from("updates").select("*").order("created_at", { ascending: false }),
+        supabase.from("reviews").select("*").order("created_at", { ascending: false }),
+      ]);
+      if (uRes.data) setUpdates(uRes.data as Update[]);
+      if (rRes.data) setReviews(rRes.data as Review[]);
+    };
+    fetchData();
+  }, [user, authLoading, isAdmin, navigate]);
+
+  if (authLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          <span className="ml-3 font-body text-muted-foreground">Cargando...</span>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!user) return null;
+
+  if (!isAdmin) {
+    return (
+      <Layout>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+          <ShieldAlert className="text-destructive" size={48} />
+          <h1 className="font-heading text-2xl font-bold">Acceso Denegado</h1>
+          <p className="text-muted-foreground font-body">No tienes permisos de administrador.</p>
+          <button
+            onClick={() => { signOut(); navigate("/"); }}
+            className="px-4 py-2 bg-muted text-muted-foreground font-heading font-bold rounded-lg text-sm"
+          >
+            Volver al inicio
+          </button>
+        </div>
+      </Layout>
+    );
+  }
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const remaining = 5 - imageFiles.length;
+    const newFiles = files.slice(0, remaining);
+    setImageFiles((prev) => [...prev, ...newFiles]);
+    newFiles.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (ev) => setImagePreviews((prev) => [...prev, ev.target?.result as string]);
+      reader.readAsDataURL(file);
+    });
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const removeImage = (index: number) => {
+    setImageFiles((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const getNextUpdateNumber = () => {
+    const categoryUpdates = updates.filter((u) => u.category === category);
+    if (categoryUpdates.length === 0) return 1;
+    return Math.max(...categoryUpdates.map((u) => u.update_number)) + 1;
+  };
+
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim() || !content.trim() || publishing) return;
+    setPublishing(true);
+    try {
+      const uploadedUrls: string[] = [];
+      for (const file of imageFiles) {
+        const ext = file.name.split(".").pop();
+        const path = `${category}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        const { error } = await supabase.storage.from("update-images").upload(path, file);
+        if (!error) {
+          const { data: urlData } = supabase.storage.from("update-images").getPublicUrl(path);
+          uploadedUrls.push(urlData.publicUrl);
+        }
+      }
+      const dateStr = new Date().toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" });
+      const updateNumber = getNextUpdateNumber();
+      const { data, error } = await supabase
+        .from("updates")
+        .insert({ title: title.trim(), content: content.trim(), date: dateStr, category, update_number: updateNumber, images: uploadedUrls })
+        .select().single();
+      if (!error && data) {
+        setUpdates([data as Update, ...updates]);
+        setTitle(""); setContent(""); setImageFiles([]); setImagePreviews([]);
+      }
+    } finally { setPublishing(false); }
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    if (deleteTarget.type === "update") {
+      await supabase.from("updates").delete().eq("id", deleteTarget.id);
+      setUpdates(updates.filter((u) => u.id !== deleteTarget.id));
+    } else {
+      await supabase.from("reviews").delete().eq("id", deleteTarget.id);
+      setReviews(reviews.filter((r) => r.id !== deleteTarget.id));
+    }
+    setDeleteTarget(null);
+  };
+
+  const startEdit = (u: Update) => {
+    setEditingUpdate(u.id);
+    setEditTitle(u.title);
+    setEditContent(u.content);
+  };
+
+  const saveEdit = async () => {
+    if (!editingUpdate || !editTitle.trim() || !editContent.trim()) return;
+    const { error } = await supabase
+      .from("updates")
+      .update({ title: editTitle.trim(), content: editContent.trim() })
+      .eq("id", editingUpdate);
+    if (!error) {
+      setUpdates(updates.map((u) => u.id === editingUpdate ? { ...u, title: editTitle.trim(), content: editContent.trim() } : u));
+    }
+    setEditingUpdate(null);
+  };
+
+  const handleSignOut = async () => { await signOut(); navigate("/"); };
+  const getCategoryLabel = (cat: string) => GAME_CATEGORIES.find((c) => c.id === cat)?.label ?? cat;
+
+  const avgStars = reviews.length > 0
+    ? (reviews.reduce((sum, r) => sum + r.stars, 0) / reviews.length).toFixed(1)
+    : "—";
+
+  const updatesByCategory = GAME_CATEGORIES.map((cat) => ({
+    ...cat,
+    count: updates.filter((u) => u.category === cat.id).length,
+  }));
+
+  const starDistribution = [5, 4, 3, 2, 1].map((s) => ({
+    stars: s,
+    count: reviews.filter((r) => r.stars === s).length,
+    pct: reviews.length > 0 ? (reviews.filter((r) => r.stars === s).length / reviews.length) * 100 : 0,
+  }));
+
+  const recentActivity = [
+    ...updates.slice(0, 3).map((u) => ({ type: "update" as const, title: u.title, date: u.created_at, category: u.category })),
+    ...reviews.slice(0, 3).map((r) => ({ type: "review" as const, title: `${r.name} — ${r.stars}★`, date: r.created_at, category: "" })),
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
+
+  const formatTimeAgo = (dateStr: string) => {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "Ahora";
+    if (mins < 60) return `Hace ${mins}m`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `Hace ${hours}h`;
+    const days = Math.floor(hours / 24);
+    return `Hace ${days}d`;
+  };
+
+  const tabs = [
+    { key: "dashboard" as const, icon: BarChart3, label: "Dashboard" },
+    { key: "updates" as const, icon: FileText, label: `Actualizaciones (${updates.length})` },
+    { key: "reviews" as const, icon: MessageSquare, label: `Reseñas (${reviews.length})` },
+  ];
+
+  return (
+    <Layout>
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="font-heading text-2xl font-bold text-gradient-gold">Panel Admin</h1>
+            <p className="text-muted-foreground text-sm font-body">Bienvenido, {user.email?.split("@")[0]}</p>
+          </div>
+          <button onClick={handleSignOut} className="flex items-center gap-2 px-4 py-2 bg-muted text-muted-foreground rounded-lg font-heading font-bold text-sm hover:bg-muted/80 transition">
+            <LogOut size={16} /> Salir
+          </button>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-heading font-bold text-sm transition-all border-2 ${
+                activeTab === tab.key
+                  ? "bg-primary text-primary-foreground border-primary glow-gold"
+                  : "bg-card border-border text-muted-foreground hover:border-primary/50"
+              }`}
+            >
+              <tab.icon size={16} />
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Dashboard */}
+        {activeTab === "dashboard" && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <StatCard icon={FileText} value={updates.length} label="Actualizaciones" />
+              <StatCard icon={MessageSquare} value={reviews.length} label="Reseñas" />
+              <StatCard icon={Star} value={avgStars} label="Promedio" color="text-primary" />
+              <StatCard icon={Users} value={server.online ? server.players?.online ?? 0 : 0} label="Jugadores" color="text-secondary" />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Server status */}
+              <div className="card-medieval p-5">
+                <h3 className="font-heading font-bold mb-3">Estado del Servidor</h3>
+                <div className="flex items-center gap-2 mb-3">
+                  {server.loading ? <Activity className="animate-spin text-muted-foreground" size={18} /> : server.online ? <Wifi className="text-secondary" size={18} /> : <WifiOff className="text-destructive" size={18} />}
+                  <span className="font-body text-sm">{server.loading ? "Consultando..." : server.online ? "Activo" : "Apagado"}</span>
+                </div>
+                {server.online && server.players && (
+                  <div className="space-y-1 text-sm text-muted-foreground font-body">
+                    <p><Users size={14} className="inline mr-1" />Jugadores: {server.players.online}/{server.players.max}</p>
+                    {server.version && <p>Versión: {server.version}</p>}
+                    {server.motd && <p>MOTD: {server.motd}</p>}
+                  </div>
+                )}
+              </div>
+
+              {/* Recent activity */}
+              <div className="card-medieval p-5">
+                <h3 className="font-heading font-bold mb-3">Actividad Reciente</h3>
+                {recentActivity.length > 0 ? (
+                  <div className="space-y-2">
+                    {recentActivity.map((item, i) => (
+                      <div key={i} className="flex items-start gap-2">
+                        {item.type === "update" ? <FileText size={14} className="text-primary mt-0.5" /> : <Star size={14} className="text-primary mt-0.5" />}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-body truncate">{item.title}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatTimeAgo(item.date)}
+                            {item.category && <span> • {getCategoryLabel(item.category)}</span>}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-sm font-body">Sin actividad reciente</p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Updates by category */}
+              <div className="card-medieval p-5">
+                <h3 className="font-heading font-bold mb-3">Actualizaciones por Modo</h3>
+                {updatesByCategory.map((cat) => (
+                  <div key={cat.id} className="mb-2">
+                    <div className="flex justify-between text-sm font-body mb-1">
+                      <span>{cat.label}</span><span>{cat.count}</span>
+                    </div>
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: updates.length > 0 ? `${(cat.count / updates.length) * 100}%` : "0%" }}
+                        transition={{ delay: 0.5, duration: 0.8 }}
+                        className="h-full bg-primary rounded-full"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Star distribution */}
+              <div className="card-medieval p-5">
+                <h3 className="font-heading font-bold mb-3">Distribución de Estrellas</h3>
+                {starDistribution.map((s) => (
+                  <div key={s.stars} className="flex items-center gap-2 mb-1">
+                    <span className="text-sm font-body w-4">{s.stars}</span>
+                    <Star size={12} className="text-primary fill-primary" />
+                    <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                      <motion.div initial={{ width: 0 }} animate={{ width: `${s.pct}%` }} transition={{ delay: 0.5, duration: 0.8 }} className="h-full bg-primary rounded-full" />
+                    </div>
+                    <span className="text-xs text-muted-foreground w-6 text-right">{s.count}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Quick actions */}
+              <div className="card-medieval p-5">
+                <h3 className="font-heading font-bold mb-3">Acciones Rápidas</h3>
+                <div className="space-y-2">
+                  <button onClick={() => setActiveTab("updates")} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground font-heading font-bold text-sm hover:opacity-90 transition w-full">
+                    <Plus size={16} /> Nueva Actualización
+                  </button>
+                  <button onClick={() => navigate("/actualizaciones")} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted text-muted-foreground font-heading font-bold text-sm hover:bg-muted/80 transition w-full">
+                    <Eye size={16} /> Ver Página Pública
+                  </button>
+                  <button onClick={() => navigate("/valoraciones")} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted text-muted-foreground font-heading font-bold text-sm hover:bg-muted/80 transition w-full">
+                    <Star size={16} /> Ver Valoraciones
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Updates Tab */}
+        {activeTab === "updates" && (
+          <div className="space-y-6">
+            <div className="card-medieval p-6">
+              <h3 className="font-heading font-bold text-lg mb-4">Nueva Actualización</h3>
+              <div className="mb-4">
+                <p className="text-sm font-heading font-semibold mb-2">Foro / Modo de Juego</p>
+                <div className="flex flex-wrap gap-2">
+                  {GAME_CATEGORIES.map((cat) => (
+                    <button
+                      key={cat.id}
+                      onClick={() => setCategory(cat.id)}
+                      className={`px-4 py-2 rounded-lg font-heading font-bold text-sm transition-colors border-2 ${
+                        category === cat.id
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-background border-border text-muted-foreground hover:border-primary/50"
+                      }`}
+                    >
+                      {cat.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground font-body mt-2">
+                  N° Update: #{getNextUpdateNumber()} — {getCategoryLabel(category)}
+                </p>
+              </div>
+
+              <form onSubmit={handleAdd} className="space-y-4">
+                <input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Título"
+                  className="w-full px-4 py-2.5 rounded-lg bg-background border border-border font-body text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <textarea
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  placeholder="Contenido de la actualización..."
+                  className="w-full px-4 py-2.5 rounded-lg bg-background border border-border font-body text-sm focus:outline-none focus:ring-2 focus:ring-primary min-h-[120px]"
+                />
+
+                <div>
+                  <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleImageSelect} className="hidden" />
+                  <button type="button" onClick={() => fileInputRef.current?.click()} disabled={imageFiles.length >= 5} className="flex items-center gap-2 px-4 py-2 bg-muted rounded-lg text-sm font-body disabled:opacity-50">
+                    <Upload size={16} /> Añadir imágenes ({imageFiles.length}/5)
+                  </button>
+                  {imagePreviews.length > 0 && (
+                    <div className="flex gap-2 mt-2 flex-wrap">
+                      {imagePreviews.map((preview, i) => (
+                        <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden border border-border">
+                          <img src={preview} alt="" className="w-full h-full object-cover" />
+                          <button onClick={() => removeImage(i)} className="absolute top-0.5 right-0.5 bg-destructive text-destructive-foreground rounded-full p-0.5"><X size={12} /></button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <button type="submit" disabled={publishing || !title.trim() || !content.trim()} className="px-6 py-2 bg-primary text-primary-foreground rounded-lg font-heading font-bold text-sm flex items-center gap-2 disabled:opacity-50">
+                  {publishing ? <><div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" /> Publicando...</> : <><Plus size={16} /> Publicar</>}
+                </button>
+              </form>
+            </div>
+
+            <div className="space-y-4">
+              {updates.map((update) => (
+                <div key={update.id} className="card-medieval p-4">
+                  {editingUpdate === update.id ? (
+                    <div className="space-y-2">
+                      <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="w-full px-3 py-1.5 rounded-lg bg-background border border-border font-body text-sm" />
+                      <textarea value={editContent} onChange={(e) => setEditContent(e.target.value)} className="w-full px-3 py-1.5 rounded-lg bg-background border border-border font-body text-sm min-h-[80px]" />
+                      <div className="flex gap-2">
+                        <button onClick={saveEdit} className="px-3 py-1 bg-secondary text-secondary-foreground rounded-lg text-sm font-heading font-bold flex items-center gap-1"><Check size={14} /> Guardar</button>
+                        <button onClick={() => setEditingUpdate(null)} className="px-3 py-1 bg-muted text-muted-foreground rounded-lg text-sm font-heading font-bold flex items-center gap-1"><XCircle size={14} /> Cancelar</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground font-body">{getCategoryLabel(update.category)} #{update.update_number}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => startEdit(update)} className="p-1 text-muted-foreground hover:text-foreground"><Edit2 size={14} /></button>
+                          <button onClick={() => setDeleteTarget({ type: "update", id: update.id, name: update.title })} className="p-1 text-destructive hover:text-destructive/80"><Trash2 size={14} /></button>
+                        </div>
+                      </div>
+                      <h4 className="font-heading font-bold">{update.title}</h4>
+                      <p className="text-muted-foreground text-sm font-body line-clamp-2">{update.content}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{update.date}</p>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Reviews Tab */}
+        {activeTab === "reviews" && (
+          <div className="space-y-4">
+            {reviews.map((review) => (
+              <div key={review.id} className="card-medieval p-4 flex items-start justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-heading font-bold text-sm">{review.name}</span>
+                    <div className="flex gap-0.5">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Star key={s} size={12} className={s <= review.stars ? "text-primary fill-primary" : "text-muted-foreground"} />
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-muted-foreground text-sm font-body">{review.comment}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{review.date}</p>
+                </div>
+                <button onClick={() => setDeleteTarget({ type: "review", id: review.id, name: review.name })} className="p-1 text-destructive hover:text-destructive/80 flex-shrink-0">
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            ))}
+            {reviews.length === 0 && (
+              <p className="text-center text-muted-foreground font-body py-8">No hay reseñas.</p>
+            )}
+          </div>
+        )}
+
+        {/* Delete confirmation modal */}
+        <AnimatePresence>
+          {deleteTarget && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-foreground/50 z-50 flex items-center justify-center p-4"
+              onClick={() => setDeleteTarget(null)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="card-medieval p-6 max-w-sm w-full"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h3 className="font-heading font-bold text-lg mb-2">¿Eliminar?</h3>
+                <p className="text-muted-foreground font-body text-sm mb-4">
+                  ¿Seguro que deseas eliminar "{deleteTarget.name}"?
+                </p>
+                <div className="flex gap-2 justify-end">
+                  <button onClick={() => setDeleteTarget(null)} className="px-4 py-2 bg-muted text-muted-foreground rounded-lg font-heading font-bold text-sm">Cancelar</button>
+                  <button onClick={confirmDelete} className="px-4 py-2 bg-destructive text-destructive-foreground rounded-lg font-heading font-bold text-sm">Eliminar</button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </Layout>
+  );
+};
+
+export default Admin;
