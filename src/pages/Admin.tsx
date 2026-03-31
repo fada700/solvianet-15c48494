@@ -294,23 +294,6 @@ const Admin = () => {
     setTimeout(() => ticketMsgEndRef.current?.scrollIntoView({ behavior: "smooth" }), 200);
   };
 
-  // Realtime for selected ticket
-  useEffect(() => {
-    if (!selectedTicket) return;
-    const channel = supabase
-      .channel(`admin-ticket-${selectedTicket.id}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "ticket_messages", filter: `ticket_id=eq.${selectedTicket.id}` }, async (payload) => {
-        const newMsg = payload.new;
-        setTicketMessages((prev) => [...prev, newMsg]);
-        if (!ticketProfiles[newMsg.user_id]) {
-          const { data: p } = await supabase.from("profiles").select("*").eq("id", newMsg.user_id).maybeSingle();
-          if (p) setTicketProfiles((prev: any) => ({ ...prev, [p.id]: p }));
-        }
-        setTimeout(() => ticketMsgEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [selectedTicket?.id]);
 
   const handleStaffSend = async (e: React.FormEvent) => {
     e.preventDefault();
