@@ -50,6 +50,7 @@ interface Message {
   user_id: string;
   message: string;
   created_at: string;
+  is_ai?: boolean;
 }
 
 interface Profile {
@@ -273,6 +274,15 @@ const Tickets = () => {
     setDescription("");
     setEvidenceUrl("");
     setCreating(false);
+
+    // Trigger AI initial response
+    try {
+      await supabase.functions.invoke("ticket-ai-respond", {
+        body: { ticket_id: data.id, mode: "initial" },
+      });
+    } catch (err) {
+      console.error("AI auto-response error:", err);
+    }
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -513,7 +523,8 @@ const Tickets = () => {
             )}
             <AnimatePresence initial={false}>
               {messages.map((msg) => {
-                const isOwner = msg.user_id === ticket.user_id;
+                const isAi = msg.is_ai === true;
+                const isOwner = msg.user_id === ticket.user_id && !isAi;
                 const profile = profiles[msg.user_id];
                 return (
                   <motion.div
@@ -523,20 +534,30 @@ const Tickets = () => {
                     className={`flex gap-2 ${isOwner ? "justify-end" : "justify-start"}`}
                   >
                     {!isOwner && (
-                      <img
-                        src={profile?.avatar_url || "/placeholder.svg"}
-                        alt=""
-                        className="w-8 h-8 rounded-full border border-primary flex-shrink-0 mt-1"
-                      />
+                      isAi ? (
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center flex-shrink-0 mt-1 text-primary-foreground text-xs font-bold">
+                          🤖
+                        </div>
+                      ) : (
+                        <img
+                          src={profile?.avatar_url || "/placeholder.svg"}
+                          alt=""
+                          className="w-8 h-8 rounded-full border border-primary flex-shrink-0 mt-1"
+                        />
+                      )
                     )}
-                    <div className={`max-w-[70%] rounded-xl p-3 ${isOwner ? "bg-primary/15 border border-primary/30" : "bg-muted border border-border"}`}>
+                    <div className={`max-w-[70%] rounded-xl p-3 ${
+                      isAi ? "bg-accent/10 border border-accent/30" :
+                      isOwner ? "bg-primary/15 border border-primary/30" : "bg-muted border border-border"
+                    }`}>
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xs font-heading font-bold">
-                          {profile?.display_name || "Usuario"}
+                          {isAi ? "Solvian IA" : (profile?.display_name || "Usuario")}
                         </span>
-                        {!isOwner && <span className="text-[10px] bg-accent/20 text-accent px-1.5 py-0.5 rounded font-body font-bold">STAFF</span>}
+                        {isAi && <span className="text-[10px] bg-accent/20 text-accent px-1.5 py-0.5 rounded font-body font-bold">IA</span>}
+                        {!isOwner && !isAi && <span className="text-[10px] bg-accent/20 text-accent px-1.5 py-0.5 rounded font-body font-bold">STAFF</span>}
                       </div>
-                      <p className="text-sm font-body">{msg.message}</p>
+                      <p className="text-sm font-body whitespace-pre-wrap">{msg.message}</p>
                       <p className="text-[10px] text-muted-foreground mt-1 font-body">{formatDateTime(msg.created_at)}</p>
                     </div>
                     {isOwner && (
