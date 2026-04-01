@@ -273,6 +273,15 @@ const Tickets = () => {
     setDescription("");
     setEvidenceUrl("");
     setCreating(false);
+
+    // Trigger AI initial response
+    try {
+      await supabase.functions.invoke("ticket-ai-respond", {
+        body: { ticket_id: data.id, mode: "initial" },
+      });
+    } catch (err) {
+      console.error("AI auto-response error:", err);
+    }
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
