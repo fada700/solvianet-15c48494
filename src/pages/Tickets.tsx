@@ -50,6 +50,7 @@ interface Message {
   user_id: string;
   message: string;
   created_at: string;
+  is_ai?: boolean;
 }
 
 interface Profile {
