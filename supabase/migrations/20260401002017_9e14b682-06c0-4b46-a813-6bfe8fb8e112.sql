@@ -1,0 +1,1 @@
+ALTER TABLE public.ticket_messages ADD COLUMN is_ai boolean NOT NULL DEFAULT false;
