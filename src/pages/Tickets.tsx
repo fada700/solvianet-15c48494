@@ -3,12 +3,11 @@ import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import AnimatedSection from "@/components/AnimatedSection";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Ticket, Send, Clock, CheckCircle2, MessageSquare, AlertTriangle,
-  ShieldCheck, HelpCircle, Gavel, UserCheck, LogIn, Plus, ArrowLeft,
+  ShieldCheck, HelpCircle, Gavel, UserCheck, LogIn, Plus,
   ExternalLink, Loader2
 } from "lucide-react";
 import { toast } from "sonner";
@@ -104,7 +103,6 @@ const Tickets = () => {
   const [cooldownRemaining, setCooldownRemaining] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Form state
   const [category, setCategory] = useState("");
   const [subject, setSubject] = useState("");
   const [description, setDescription] = useState("");
@@ -114,7 +112,6 @@ const Tickets = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Load user's active ticket
   const loadTicket = useCallback(async () => {
     if (!user) { setLoadingTicket(false); return; }
     const { data } = await supabase
@@ -128,7 +125,6 @@ const Tickets = () => {
 
     if (data) {
       setTicket(data as unknown as TicketData);
-      // Load messages
       const { data: msgs } = await supabase
         .from("ticket_messages")
         .select("*")
@@ -136,7 +132,6 @@ const Tickets = () => {
         .order("created_at", { ascending: true });
       if (msgs) setMessages(msgs as unknown as Message[]);
 
-      // Load profiles for messages
       const userIds = new Set<string>([data.user_id]);
       if (data.assigned_staff_id) userIds.add(data.assigned_staff_id);
       msgs?.forEach((m: any) => userIds.add(m.user_id));
@@ -152,7 +147,6 @@ const Tickets = () => {
       }
     } else {
       setTicket(null);
-      // Check cooldown - find last closed ticket
       const { data: lastClosed } = await supabase
         .from("tickets")
         .select("closed_at")
@@ -176,7 +170,6 @@ const Tickets = () => {
 
   useEffect(() => { loadTicket(); }, [loadTicket]);
 
-  // Cooldown timer
   useEffect(() => {
     if (!cooldownEnd) return;
     const interval = setInterval(() => {
@@ -192,7 +185,6 @@ const Tickets = () => {
     return () => clearInterval(interval);
   }, [cooldownEnd]);
 
-  // Realtime messages
   useEffect(() => {
     if (!ticket) return;
     const channel = supabase
@@ -205,7 +197,6 @@ const Tickets = () => {
       }, async (payload) => {
         const newMsg = payload.new as Message;
         setMessages((prev) => [...prev, newMsg]);
-        // Load profile if new
         if (!profiles[newMsg.user_id]) {
           const { data: p } = await supabase.from("profiles").select("*").eq("id", newMsg.user_id).maybeSingle();
           if (p) setProfiles((prev) => ({ ...prev, [p.id]: p as Profile }));
@@ -227,12 +218,17 @@ const Tickets = () => {
 
   useEffect(() => { scrollToBottom(); }, [messages]);
 
+  // --- FUNCIÓN CORREGIDA AQUÍ ---
   const handleGoogleLogin = async () => {
-    const { error } = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: 'https://solivanmc.vercel.app',
+      },
     });
     if (error) toast.error("Error al iniciar sesión con Google");
   };
+  // -----------------------------
 
   const wordCount = (text: string) => text.trim().split(/\s+/).filter(Boolean).length;
 
@@ -275,7 +271,6 @@ const Tickets = () => {
     setEvidenceUrl("");
     setCreating(false);
 
-    // Trigger AI initial response
     try {
       await supabase.functions.invoke("ticket-ai-respond", {
         body: { ticket_id: data.id, mode: "initial" },
@@ -308,7 +303,6 @@ const Tickets = () => {
     );
   }
 
-  // Not logged in
   if (!user) {
     return (
       <Layout>
@@ -336,7 +330,6 @@ const Tickets = () => {
     email: user.email,
   };
 
-  // Cooldown active
   if (!ticket && cooldownEnd && cooldownRemaining > 0) {
     const mins = Math.floor(cooldownRemaining / 60000);
     const secs = Math.floor((cooldownRemaining % 60000) / 1000);
@@ -356,7 +349,6 @@ const Tickets = () => {
     );
   }
 
-  // Create ticket form
   if (!ticket) {
     return (
       <Layout>
@@ -377,7 +369,6 @@ const Tickets = () => {
           </div>
 
           <form onSubmit={handleCreateTicket} className="space-y-5">
-            {/* Category */}
             <div>
               <label className="block font-heading font-bold text-sm mb-2">Categoría</label>
               <div className="grid grid-cols-2 gap-2">
@@ -402,7 +393,6 @@ const Tickets = () => {
               </div>
             </div>
 
-            {/* Subject */}
             <div>
               <label className="block font-heading font-bold text-sm mb-2">
                 Asunto <span className="text-muted-foreground font-body font-normal">(máx. 15 palabras)</span>
@@ -416,7 +406,6 @@ const Tickets = () => {
               <p className="text-xs text-muted-foreground mt-1 font-body">{wordCount(subject)}/15 palabras</p>
             </div>
 
-            {/* Description */}
             <div>
               <label className="block font-heading font-bold text-sm mb-2">
                 Descripción del Problema <span className="text-muted-foreground font-body font-normal">(30-150 palabras)</span>
@@ -433,7 +422,6 @@ const Tickets = () => {
               </p>
             </div>
 
-            {/* Evidence URL */}
             <div>
               <label className="block font-heading font-bold text-sm mb-2">
                 Evidencia URL <span className="text-muted-foreground font-body font-normal">(opcional)</span>
@@ -460,13 +448,11 @@ const Tickets = () => {
     );
   }
 
-  // Ticket view with chat
   const catInfo = CATEGORIES.find((c) => c.id === ticket.category);
 
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8 max-w-3xl">
-        {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <Ticket className="text-primary" size={24} />
@@ -483,10 +469,8 @@ const Tickets = () => {
           </div>
         </div>
 
-        {/* Timeline */}
         <TicketTimeline status={ticket.status} />
 
-        {/* Ticket info */}
         <div className="card-medieval p-4 mb-4">
           <div className="grid grid-cols-2 gap-3 text-sm font-body">
             <div>
@@ -506,7 +490,6 @@ const Tickets = () => {
           )}
         </div>
 
-        {/* Messages */}
         <div className="card-medieval overflow-hidden">
           <div className="p-4 border-b border-border">
             <h3 className="font-heading font-bold text-sm flex items-center gap-2">
@@ -574,7 +557,6 @@ const Tickets = () => {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Message input */}
           {ticket.status !== "closed" && (
             <form onSubmit={handleSendMessage} className="p-3 border-t border-border flex gap-2">
               <input
@@ -603,5 +585,7 @@ const Tickets = () => {
     </Layout>
   );
 };
+
+export default Tickets;
 
 export default Tickets;
