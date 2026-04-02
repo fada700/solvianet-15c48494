@@ -91,16 +91,23 @@ const Admin = () => {
     if (!isAdmin) return;
 
     const fetchData = async () => {
-      const [uRes, rRes, tRes] = await Promise.all([
+      const [uRes, rRes, tRes, fsRes, apRes] = await Promise.all([
         supabase.from("updates").select("*").order("created_at", { ascending: false }),
         supabase.from("reviews").select("*").order("created_at", { ascending: false }),
         supabase.from("tickets").select("*").order("created_at", { ascending: false }),
+        supabase.from("form_settings").select("*"),
+        supabase.from("staff_applications").select("*").order("created_at", { ascending: false }),
       ]);
       if (uRes.data) setUpdates(uRes.data as Update[]);
       if (rRes.data) setReviews(rRes.data as Review[]);
+      if (fsRes.data) {
+        const mc = fsRes.data.find((s: any) => s.form_type === "minecraft");
+        const dc = fsRes.data.find((s: any) => s.form_type === "discord");
+        setFormSettings({ minecraft: mc?.is_active ?? false, discord: dc?.is_active ?? false });
+      }
+      if (apRes.data) setApplications(apRes.data);
       if (tRes.data) {
         setAllTickets(tRes.data);
-        // Load profiles for ticket users
         const ids = new Set<string>();
         tRes.data.forEach((t: any) => { ids.add(t.user_id); if (t.assigned_staff_id) ids.add(t.assigned_staff_id); });
         if (ids.size > 0) {
