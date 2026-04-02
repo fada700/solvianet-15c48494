@@ -355,11 +355,59 @@ const Admin = () => {
     }
   };
 
+  // Form toggle handler
+  const toggleForm = async (formType: "minecraft" | "discord") => {
+    setTogglingForm(formType);
+    const newValue = !formSettings[formType];
+    const { error } = await supabase.from("form_settings").update({ is_active: newValue, updated_at: new Date().toISOString() }).eq("form_type", formType);
+    if (!error) {
+      setFormSettings((prev) => ({ ...prev, [formType]: newValue }));
+      if (!newValue) {
+        // When disabling, delete all applications of that type
+        await supabase.from("staff_applications").delete().eq("form_type", formType);
+        setApplications((prev) => prev.filter((a) => a.form_type !== formType));
+        toast.success(`Formulario ${formType === "minecraft" ? "Minecraft" : "Discord"} desactivado. Solicitudes eliminadas.`);
+      } else {
+        toast.success(`Formulario ${formType === "minecraft" ? "Minecraft" : "Discord"} activado.`);
+      }
+    }
+    setTogglingForm(null);
+  };
+
+  const markAsReviewed = async (appId: string) => {
+    const { error } = await supabase.from("staff_applications").update({ status: "reviewed" }).eq("id", appId);
+    if (!error) {
+      setApplications((prev) => prev.map((a) => a.id === appId ? { ...a, status: "reviewed" } : a));
+      if (selectedApp?.id === appId) setSelectedApp((prev: any) => prev ? { ...prev, status: "reviewed" } : prev);
+      toast.success("Solicitud marcada como revisada");
+    }
+  };
+
+  const deleteApplication = async (appId: string) => {
+    const { error } = await supabase.from("staff_applications").delete().eq("id", appId);
+    if (!error) {
+      setApplications((prev) => prev.filter((a) => a.id !== appId));
+      if (selectedApp?.id === appId) setSelectedApp(null);
+      toast.success("Solicitud eliminada");
+    }
+  };
+
+  const filteredApps = applications.filter((a) => {
+    const matchStatus = appFilter === "all" || a.status === appFilter;
+    const matchType = appTypeFilter === "all" || a.form_type === appTypeFilter;
+    return matchStatus && matchType;
+  });
+
+  const mcAppsCount = applications.filter((a) => a.form_type === "minecraft").length;
+  const dcAppsCount = applications.filter((a) => a.form_type === "discord").length;
+  const pendingAppsCount = applications.filter((a) => a.status === "pending").length;
+
   const tabs = [
     { key: "dashboard" as const, icon: BarChart3, label: "Dashboard" },
     { key: "updates" as const, icon: FileText, label: `Actualizaciones (${updates.length})` },
     { key: "reviews" as const, icon: MessageSquare, label: `Reseñas (${reviews.length})` },
     { key: "tickets" as const, icon: Ticket, label: `Tickets (${allTickets.length})` },
+    { key: "applications" as const, icon: ClipboardList, label: `Aplicaciones (${applications.length})` },
   ];
 
   return (
