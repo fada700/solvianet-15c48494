@@ -85,6 +85,7 @@ const Admin = () => {
   const [selectedApp, setSelectedApp] = useState<any | null>(null);
   const [togglingForm, setTogglingForm] = useState<string | null>(null);
 
+  useEffect(() => {
     if (authLoading) return;
     if (!user) { navigate("/login"); return; }
     if (!isAdmin) return;
