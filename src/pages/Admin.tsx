@@ -59,7 +59,7 @@ const Admin = () => {
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [publishing, setPublishing] = useState(false);
-  const [activeTab, setActiveTab] = useState<"dashboard" | "updates" | "reviews" | "tickets">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "updates" | "reviews" | "tickets" | "applications">("dashboard");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ type: "update" | "review"; id: string; name: string } | null>(null);
   const [editingUpdate, setEditingUpdate] = useState<string | null>(null);
