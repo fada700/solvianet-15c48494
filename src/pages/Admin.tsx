@@ -77,7 +77,14 @@ const Admin = () => {
   const [sendingStaffMsg, setSendingStaffMsg] = useState(false);
   const ticketMsgEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  // Staff applications state
+  const [formSettings, setFormSettings] = useState<{ minecraft: boolean; discord: boolean }>({ minecraft: false, discord: false });
+  const [applications, setApplications] = useState<any[]>([]);
+  const [appFilter, setAppFilter] = useState<"all" | "pending" | "reviewed">("all");
+  const [appTypeFilter, setAppTypeFilter] = useState<"all" | "minecraft" | "discord">("all");
+  const [selectedApp, setSelectedApp] = useState<any | null>(null);
+  const [togglingForm, setTogglingForm] = useState<string | null>(null);
+
     if (authLoading) return;
     if (!user) { navigate("/login"); return; }
     if (!isAdmin) return;
