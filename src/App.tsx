@@ -13,6 +13,7 @@ import Admin from "./pages/Admin";
 import Login from "./pages/Login";
 import Staff from "./pages/Staff";
 import Tickets from "./pages/Tickets";
+import Aplicaciones from "./pages/Aplicaciones";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
