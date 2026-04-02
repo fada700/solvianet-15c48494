@@ -5,6 +5,7 @@ import {
   Plus, Trash2, LogOut, Star, MessageSquare, ShieldAlert, Upload, X,
   Image as ImageIcon, Edit2, Check, XCircle, BarChart3, Users, FileText, TrendingUp,
   Clock, Wifi, WifiOff, Activity, Award, Eye, Ticket, UserCheck, Send, Search,
+  ClipboardList, Gamepad2, MessageCircle, CheckCircle2, Filter,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -58,7 +59,7 @@ const Admin = () => {
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [publishing, setPublishing] = useState(false);
-  const [activeTab, setActiveTab] = useState<"dashboard" | "updates" | "reviews" | "tickets">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "updates" | "reviews" | "tickets" | "applications">("dashboard");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ type: "update" | "review"; id: string; name: string } | null>(null);
   const [editingUpdate, setEditingUpdate] = useState<string | null>(null);
@@ -76,22 +77,37 @@ const Admin = () => {
   const [sendingStaffMsg, setSendingStaffMsg] = useState(false);
   const ticketMsgEndRef = useRef<HTMLDivElement>(null);
 
+  // Staff applications state
+  const [formSettings, setFormSettings] = useState<{ minecraft: boolean; discord: boolean }>({ minecraft: false, discord: false });
+  const [applications, setApplications] = useState<any[]>([]);
+  const [appFilter, setAppFilter] = useState<"all" | "pending" | "reviewed">("all");
+  const [appTypeFilter, setAppTypeFilter] = useState<"all" | "minecraft" | "discord">("all");
+  const [selectedApp, setSelectedApp] = useState<any | null>(null);
+  const [togglingForm, setTogglingForm] = useState<string | null>(null);
+
   useEffect(() => {
     if (authLoading) return;
     if (!user) { navigate("/login"); return; }
     if (!isAdmin) return;
 
     const fetchData = async () => {
-      const [uRes, rRes, tRes] = await Promise.all([
+      const [uRes, rRes, tRes, fsRes, apRes] = await Promise.all([
         supabase.from("updates").select("*").order("created_at", { ascending: false }),
         supabase.from("reviews").select("*").order("created_at", { ascending: false }),
         supabase.from("tickets").select("*").order("created_at", { ascending: false }),
+        supabase.from("form_settings").select("*"),
+        supabase.from("staff_applications").select("*").order("created_at", { ascending: false }),
       ]);
       if (uRes.data) setUpdates(uRes.data as Update[]);
       if (rRes.data) setReviews(rRes.data as Review[]);
+      if (fsRes.data) {
+        const mc = fsRes.data.find((s: any) => s.form_type === "minecraft");
+        const dc = fsRes.data.find((s: any) => s.form_type === "discord");
+        setFormSettings({ minecraft: mc?.is_active ?? false, discord: dc?.is_active ?? false });
+      }
+      if (apRes.data) setApplications(apRes.data);
       if (tRes.data) {
         setAllTickets(tRes.data);
-        // Load profiles for ticket users
         const ids = new Set<string>();
         tRes.data.forEach((t: any) => { ids.add(t.user_id); if (t.assigned_staff_id) ids.add(t.assigned_staff_id); });
         if (ids.size > 0) {
@@ -339,11 +355,59 @@ const Admin = () => {
     }
   };
 
+  // Form toggle handler
+  const toggleForm = async (formType: "minecraft" | "discord") => {
+    setTogglingForm(formType);
+    const newValue = !formSettings[formType];
+    const { error } = await supabase.from("form_settings").update({ is_active: newValue, updated_at: new Date().toISOString() }).eq("form_type", formType);
+    if (!error) {
+      setFormSettings((prev) => ({ ...prev, [formType]: newValue }));
+      if (!newValue) {
+        // When disabling, delete all applications of that type
+        await supabase.from("staff_applications").delete().eq("form_type", formType);
+        setApplications((prev) => prev.filter((a) => a.form_type !== formType));
+        toast.success(`Formulario ${formType === "minecraft" ? "Minecraft" : "Discord"} desactivado. Solicitudes eliminadas.`);
+      } else {
+        toast.success(`Formulario ${formType === "minecraft" ? "Minecraft" : "Discord"} activado.`);
+      }
+    }
+    setTogglingForm(null);
+  };
+
+  const markAsReviewed = async (appId: string) => {
+    const { error } = await supabase.from("staff_applications").update({ status: "reviewed" }).eq("id", appId);
+    if (!error) {
+      setApplications((prev) => prev.map((a) => a.id === appId ? { ...a, status: "reviewed" } : a));
+      if (selectedApp?.id === appId) setSelectedApp((prev: any) => prev ? { ...prev, status: "reviewed" } : prev);
+      toast.success("Solicitud marcada como revisada");
+    }
+  };
+
+  const deleteApplication = async (appId: string) => {
+    const { error } = await supabase.from("staff_applications").delete().eq("id", appId);
+    if (!error) {
+      setApplications((prev) => prev.filter((a) => a.id !== appId));
+      if (selectedApp?.id === appId) setSelectedApp(null);
+      toast.success("Solicitud eliminada");
+    }
+  };
+
+  const filteredApps = applications.filter((a) => {
+    const matchStatus = appFilter === "all" || a.status === appFilter;
+    const matchType = appTypeFilter === "all" || a.form_type === appTypeFilter;
+    return matchStatus && matchType;
+  });
+
+  const mcAppsCount = applications.filter((a) => a.form_type === "minecraft").length;
+  const dcAppsCount = applications.filter((a) => a.form_type === "discord").length;
+  const pendingAppsCount = applications.filter((a) => a.status === "pending").length;
+
   const tabs = [
     { key: "dashboard" as const, icon: BarChart3, label: "Dashboard" },
     { key: "updates" as const, icon: FileText, label: `Actualizaciones (${updates.length})` },
     { key: "reviews" as const, icon: MessageSquare, label: `Reseñas (${reviews.length})` },
     { key: "tickets" as const, icon: Ticket, label: `Tickets (${allTickets.length})` },
+    { key: "applications" as const, icon: ClipboardList, label: `Aplicaciones (${applications.length})` },
   ];
 
   return (
@@ -730,7 +794,146 @@ const Admin = () => {
           </div>
         )}
 
-        {/* Delete confirmation modal */}
+        {/* Applications Tab */}
+        {activeTab === "applications" && (
+          <div className="space-y-6">
+            {/* Toggle switches */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {(["minecraft", "discord"] as const).map((type) => (
+                <div key={type} className="card-medieval p-5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {type === "minecraft" ? <Gamepad2 className="text-primary" size={24} /> : <MessageCircle className="text-accent" size={24} />}
+                      <div>
+                        <h3 className="font-heading font-bold text-sm">Formulario {type === "minecraft" ? "Minecraft" : "Discord"}</h3>
+                        <p className="text-xs text-muted-foreground font-body">{formSettings[type] ? "Activo" : "Desactivado"}</p>
+                      </div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formSettings[type]}
+                        onChange={() => toggleForm(type)}
+                        disabled={togglingForm === type}
+                        className="sr-only peer"
+                      />
+                      <div className="group peer ring-0 bg-destructive/60 rounded-full outline-none duration-300 after:duration-300 w-16 h-8 shadow-md peer-checked:bg-secondary peer-focus:outline-none after:content-[''] after:rounded-full after:absolute after:bg-background after:outline-none after:h-6 after:w-6 after:top-1 after:left-1 after:flex after:justify-center after:items-center peer-checked:after:translate-x-8 peer-hover:after:scale-95">
+                        <svg className="absolute top-1 left-8 stroke-foreground w-6 h-6" height="100" preserveAspectRatio="xMidYMid meet" viewBox="0 0 100 100" width="100" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M50,18A19.9,19.9,0,0,0,30,38v8a8,8,0,0,0-8,8V74a8,8,0,0,0,8,8H70a8,8,0,0,0,8-8V54a8,8,0,0,0-8-8H38V38a12,12,0,0,1,23.6-3,4,4,0,1,0,7.8-2A20.1,20.1,0,0,0,50,18Z" />
+                        </svg>
+                        <svg className="absolute top-1 left-1 stroke-foreground w-6 h-6" height="100" preserveAspectRatio="xMidYMid meet" viewBox="0 0 100 100" width="100" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M30,46V38a20,20,0,0,1,40,0v8a8,8,0,0,1,8,8V74a8,8,0,0,1-8,8H30a8,8,0,0,1-8-8V54A8,8,0,0,1,30,46Zm32-8v8H38V38a12,12,0,0,1,24,0Z" fillRule="evenodd" />
+                        </svg>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Analytics cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <StatCard icon={ClipboardList} value={applications.length} label="Total Solicitudes" />
+              <StatCard icon={Gamepad2} value={mcAppsCount} label="Minecraft" color="text-primary" />
+              <StatCard icon={MessageCircle} value={dcAppsCount} label="Discord" color="text-accent" />
+              <StatCard icon={Clock} value={pendingAppsCount} label="Pendientes" color="text-destructive" />
+            </div>
+
+            {/* Filters */}
+            <div className="flex flex-wrap gap-2">
+              {(["all", "pending", "reviewed"] as const).map((f) => (
+                <button key={f} onClick={() => setAppFilter(f)} className={`px-4 py-2 rounded-lg font-heading font-bold text-xs transition border-2 ${appFilter === f ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border text-muted-foreground hover:border-primary/50"}`}>
+                  {f === "all" ? "Todos" : f === "pending" ? "Pendientes" : "Revisados"}
+                </button>
+              ))}
+              <div className="w-px bg-border mx-1" />
+              {(["all", "minecraft", "discord"] as const).map((f) => (
+                <button key={f} onClick={() => setAppTypeFilter(f)} className={`px-4 py-2 rounded-lg font-heading font-bold text-xs transition border-2 ${appTypeFilter === f ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border text-muted-foreground hover:border-primary/50"}`}>
+                  {f === "all" ? "Todos" : f === "minecraft" ? "Minecraft" : "Discord"}
+                </button>
+              ))}
+            </div>
+
+            {/* Application detail view */}
+            {selectedApp ? (
+              <div className="card-medieval p-6">
+                <button onClick={() => setSelectedApp(null)} className="text-sm text-muted-foreground font-body hover:text-foreground transition mb-4 block">← Volver a lista</button>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <img src={selectedApp.user_avatar || "/placeholder.svg"} alt="" className="w-12 h-12 rounded-full border-2 border-border" />
+                    <div>
+                      <h3 className="font-heading font-bold">{selectedApp.user_name || "Usuario"}</h3>
+                      <p className="text-xs text-muted-foreground font-body">{selectedApp.user_email}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-3 py-1 rounded-full text-xs font-heading font-bold ${selectedApp.status === "pending" ? "bg-primary/20 text-primary" : "bg-secondary/20 text-secondary"}`}>
+                      {selectedApp.status === "pending" ? "Pendiente" : "Revisado"}
+                    </span>
+                    <span className={`px-3 py-1 rounded-full text-xs font-heading font-bold ${selectedApp.form_type === "minecraft" ? "bg-primary/10 text-primary" : "bg-accent/10 text-accent"}`}>
+                      {selectedApp.form_type === "minecraft" ? "Minecraft" : "Discord"}
+                    </span>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground font-body mb-4">
+                  Fecha: {new Date(selectedApp.created_at).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                </p>
+
+                <div className="space-y-4">
+                  {Object.entries(selectedApp.answers || {}).map(([key, value]) => (
+                    <div key={key} className="p-3 bg-muted/30 rounded-lg">
+                      <p className="text-xs font-heading font-semibold text-muted-foreground mb-1">{key}</p>
+                      <p className="font-body text-sm">{String(value)}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex gap-2 mt-6">
+                  {selectedApp.status === "pending" && (
+                    <button onClick={() => markAsReviewed(selectedApp.id)} className="flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-lg font-heading font-bold text-sm hover:opacity-90 transition">
+                      <CheckCircle2 size={16} /> Marcar como Revisado
+                    </button>
+                  )}
+                  <button onClick={() => deleteApplication(selectedApp.id)} className="flex items-center gap-2 px-4 py-2 bg-destructive text-destructive-foreground rounded-lg font-heading font-bold text-sm hover:opacity-90 transition">
+                    <Trash2 size={16} /> Eliminar
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredApps.map((app) => (
+                  <div key={app.id} className="card-medieval p-4 cursor-pointer hover:border-primary/50 transition" onClick={() => setSelectedApp(app)}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <img src={app.user_avatar || "/placeholder.svg"} alt="" className="w-10 h-10 rounded-full border border-border" />
+                        <div>
+                          <h4 className="font-heading font-bold text-sm">{app.user_name || "Usuario"}</h4>
+                          <p className="text-xs text-muted-foreground font-body">{app.user_email}</p>
+                        </div>
+                      </div>
+                      <div className="text-right flex items-center gap-2">
+                        <span className={`px-2 py-1 rounded-full text-[10px] font-heading font-bold ${app.form_type === "minecraft" ? "bg-primary/10 text-primary" : "bg-accent/10 text-accent"}`}>
+                          {app.form_type === "minecraft" ? "MC" : "DC"}
+                        </span>
+                        <span className={`px-2 py-1 rounded-full text-[10px] font-heading font-bold ${app.status === "pending" ? "bg-primary/20 text-primary" : "bg-secondary/20 text-secondary"}`}>
+                          {app.status === "pending" ? "Pendiente" : "Revisado"}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground font-body mt-2">
+                      {new Date(app.created_at).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" })}
+                    </p>
+                  </div>
+                ))}
+                {filteredApps.length === 0 && (
+                  <p className="text-center text-muted-foreground font-body py-8">No se encontraron solicitudes.</p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+
         <AnimatePresence>
           {deleteTarget && (
             <motion.div

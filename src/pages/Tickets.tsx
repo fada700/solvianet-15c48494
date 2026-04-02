@@ -587,5 +587,3 @@ const Tickets = () => {
 };
 
 export default Tickets;
-
-export default Tickets;

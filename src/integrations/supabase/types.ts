@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      form_settings: {
+        Row: {
+          form_type: string
+          id: string
+          is_active: boolean
+          updated_at: string
+        }
+        Insert: {
+          form_type: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Update: {
+          form_type?: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -62,6 +83,42 @@ export type Database = {
           id?: string
           name?: string
           stars?: number
+        }
+        Relationships: []
+      }
+      staff_applications: {
+        Row: {
+          answers: Json
+          created_at: string
+          form_type: string
+          id: string
+          status: string
+          user_avatar: string | null
+          user_email: string | null
+          user_id: string
+          user_name: string | null
+        }
+        Insert: {
+          answers?: Json
+          created_at?: string
+          form_type: string
+          id?: string
+          status?: string
+          user_avatar?: string | null
+          user_email?: string | null
+          user_id: string
+          user_name?: string | null
+        }
+        Update: {
+          answers?: Json
+          created_at?: string
+          form_type?: string
+          id?: string
+          status?: string
+          user_avatar?: string | null
+          user_email?: string | null
+          user_id?: string
+          user_name?: string | null
         }
         Relationships: []
       }
