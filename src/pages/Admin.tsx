@@ -446,10 +446,10 @@ const Admin = () => {
         {activeTab === "dashboard" && (
           <div className="space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <StatCard icon={FileText} value={updates.length} label="Actualizaciones" />
-              <StatCard icon={MessageSquare} value={reviews.length} label="Reseñas" />
-              <StatCard icon={Star} value={avgStars} label="Promedio" color="text-primary" />
-              <StatCard icon={Users} value={server.online ? server.players?.online ?? 0 : 0} label="Jugadores" color="text-secondary" />
+              <StatCard icon={FileText} value={updates.length} label="Total Updates" />
+              <StatCard icon={MessageSquare} value={reviews.length} label="Total Reseñas" />
+              <StatCard icon={Star} value={avgStars} label="Nota Media" color="text-primary" />
+              <StatCard icon={Users} value={server.online ? server.players?.online ?? 0 : 0} label="Online Ahora" color="text-secondary" />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
