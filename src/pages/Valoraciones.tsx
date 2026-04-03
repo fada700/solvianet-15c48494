@@ -17,7 +17,7 @@ const COOLDOWN_KEY = "solvianmc_review_cooldown";
 const COOLDOWN_MS = 10 * 60 * 1000;
 
 const Valoraciones = () => {
-  const { user } = useAuth();
+  const { user, isStaffUser } = useAuth();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [name, setName] = useState("");
   const [stars, setStars] = useState(5);
