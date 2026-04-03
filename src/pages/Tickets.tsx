@@ -91,8 +91,7 @@ const formatDateTime = (dateStr: string) => {
 };
 
 const Tickets = () => {
-  const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isStaffUser } = useAuth();
   const [ticket, setTicket] = useState<TicketData | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
