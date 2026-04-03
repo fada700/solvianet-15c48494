@@ -471,7 +471,7 @@ const Admin = () => {
 
               {/* Recent activity */}
               <div className="card-medieval p-5">
-                <h3 className="font-heading font-bold mb-3">Actividad Reciente</h3>
+                <h3 className="font-heading font-bold mb-3">📋 Últimos Movimientos</h3>
                 {recentActivity.length > 0 ? (
                   <div className="space-y-2">
                     {recentActivity.map((item, i) => (
