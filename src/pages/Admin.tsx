@@ -552,7 +552,7 @@ const Admin = () => {
         {activeTab === "updates" && (
           <div className="space-y-6">
             <div className="card-medieval p-6">
-              <h3 className="font-heading font-bold text-lg mb-4">Nueva Actualización</h3>
+              <h3 className="font-heading font-bold text-lg mb-4">✏️ Crear Nuevo Update</h3>
               <div className="mb-4">
                 <p className="text-sm font-heading font-semibold mb-2">Foro / Modo de Juego</p>
                 <div className="flex flex-wrap gap-2">
