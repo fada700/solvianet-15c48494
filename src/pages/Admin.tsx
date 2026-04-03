@@ -531,7 +531,7 @@ const Admin = () => {
 
               {/* Quick actions */}
               <div className="card-medieval p-5">
-                <h3 className="font-heading font-bold mb-3">Acciones Rápidas</h3>
+                <h3 className="font-heading font-bold mb-3">⚡ Accesos Directos</h3>
                 <div className="space-y-2">
                   <button onClick={() => setActiveTab("updates")} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground font-heading font-bold text-sm hover:opacity-90 transition w-full">
                     <Plus size={16} /> Nueva Actualización
