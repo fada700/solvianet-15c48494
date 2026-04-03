@@ -20,7 +20,7 @@ const navLinks = [
 const Navbar = () => {
   const [open, setOpen] = useState(false);
   const location = useLocation();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isStaffUser, isGoogleUser } = useAuth();
 
   const copyIP = () => {
     navigator.clipboard.writeText("play.solvianmc.net");
