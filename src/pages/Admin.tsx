@@ -786,7 +786,7 @@ const Admin = () => {
                     </div>
                   ))}
                   {filteredTickets.length === 0 && (
-                    <p className="text-center text-muted-foreground font-body py-8">No se encontraron tickets.</p>
+                    <p className="text-center text-muted-foreground font-body py-8">No hay tickets que coincidan con tu búsqueda.</p>
                   )}
                 </div>
               </>
