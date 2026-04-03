@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Shield } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 import logo from "@/assets/solvianmc.png";
 
 const navLinks = [
@@ -19,6 +20,7 @@ const navLinks = [
 const Navbar = () => {
   const [open, setOpen] = useState(false);
   const location = useLocation();
+  const { user, isAdmin } = useAuth();
 
   const copyIP = () => {
     navigator.clipboard.writeText("play.solvianmc.net");
@@ -66,6 +68,14 @@ const Navbar = () => {
           >
             Copiar IP
           </button>
+          {user && isAdmin && (
+            <Link
+              to="/admin"
+              className="ml-1 px-4 py-2 rounded-lg bg-accent text-accent-foreground font-heading font-bold text-sm flex items-center gap-1.5 hover:opacity-90 transition"
+            >
+              <Shield size={14} /> Admin P.
+            </Link>
+          )}
         </div>
 
         {/* Mobile toggle */}
@@ -108,6 +118,15 @@ const Navbar = () => {
           >
             Copiar IP
           </button>
+          {user && isAdmin && (
+            <Link
+              to="/admin"
+              className="mt-2 w-full px-4 py-2 rounded-lg bg-accent text-accent-foreground font-heading font-bold text-sm flex items-center justify-center gap-1.5"
+              onClick={() => setOpen(false)}
+            >
+              <Shield size={14} /> Admin P.
+            </Link>
+          )}
         </div>
       )}
     </nav>

@@ -416,8 +416,8 @@ const Admin = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="font-heading text-2xl font-bold text-gradient-gold">Panel Admin</h1>
-            <p className="text-muted-foreground text-sm font-body">Bienvenido, {user.email?.split("@")[0]}</p>
+            <h1 className="font-heading text-2xl font-bold text-gradient-gold">Panel de Administración</h1>
+            <p className="text-muted-foreground text-sm font-body">Hola, {user.email?.split("@")[0]} 👋</p>
           </div>
           <button onClick={handleSignOut} className="flex items-center gap-2 px-4 py-2 bg-muted text-muted-foreground rounded-lg font-heading font-bold text-sm hover:bg-muted/80 transition">
             <LogOut size={16} /> Salir
@@ -446,16 +446,16 @@ const Admin = () => {
         {activeTab === "dashboard" && (
           <div className="space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <StatCard icon={FileText} value={updates.length} label="Actualizaciones" />
-              <StatCard icon={MessageSquare} value={reviews.length} label="Reseñas" />
-              <StatCard icon={Star} value={avgStars} label="Promedio" color="text-primary" />
-              <StatCard icon={Users} value={server.online ? server.players?.online ?? 0 : 0} label="Jugadores" color="text-secondary" />
+              <StatCard icon={FileText} value={updates.length} label="Total Updates" />
+              <StatCard icon={MessageSquare} value={reviews.length} label="Total Reseñas" />
+              <StatCard icon={Star} value={avgStars} label="Nota Media" color="text-primary" />
+              <StatCard icon={Users} value={server.online ? server.players?.online ?? 0 : 0} label="Online Ahora" color="text-secondary" />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Server status */}
               <div className="card-medieval p-5">
-                <h3 className="font-heading font-bold mb-3">Estado del Servidor</h3>
+                <h3 className="font-heading font-bold mb-3">🖥️ Estado del Servidor</h3>
                 <div className="flex items-center gap-2 mb-3">
                   {server.loading ? <Activity className="animate-spin text-muted-foreground" size={18} /> : server.online ? <Wifi className="text-secondary" size={18} /> : <WifiOff className="text-destructive" size={18} />}
                   <span className="font-body text-sm">{server.loading ? "Consultando..." : server.online ? "Activo" : "Apagado"}</span>
@@ -471,7 +471,7 @@ const Admin = () => {
 
               {/* Recent activity */}
               <div className="card-medieval p-5">
-                <h3 className="font-heading font-bold mb-3">Actividad Reciente</h3>
+                <h3 className="font-heading font-bold mb-3">📋 Últimos Movimientos</h3>
                 {recentActivity.length > 0 ? (
                   <div className="space-y-2">
                     {recentActivity.map((item, i) => (
@@ -488,7 +488,7 @@ const Admin = () => {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-muted-foreground text-sm font-body">Sin actividad reciente</p>
+                  <p className="text-muted-foreground text-sm font-body">Nada por aquí todavía</p>
                 )}
               </div>
             </div>
@@ -496,7 +496,7 @@ const Admin = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Updates by category */}
               <div className="card-medieval p-5">
-                <h3 className="font-heading font-bold mb-3">Actualizaciones por Modo</h3>
+                <h3 className="font-heading font-bold mb-3">📊 Updates por Modalidad</h3>
                 {updatesByCategory.map((cat) => (
                   <div key={cat.id} className="mb-2">
                     <div className="flex justify-between text-sm font-body mb-1">
@@ -516,7 +516,7 @@ const Admin = () => {
 
               {/* Star distribution */}
               <div className="card-medieval p-5">
-                <h3 className="font-heading font-bold mb-3">Distribución de Estrellas</h3>
+                <h3 className="font-heading font-bold mb-3">⭐ Cómo nos califican</h3>
                 {starDistribution.map((s) => (
                   <div key={s.stars} className="flex items-center gap-2 mb-1">
                     <span className="text-sm font-body w-4">{s.stars}</span>
@@ -531,10 +531,10 @@ const Admin = () => {
 
               {/* Quick actions */}
               <div className="card-medieval p-5">
-                <h3 className="font-heading font-bold mb-3">Acciones Rápidas</h3>
+                <h3 className="font-heading font-bold mb-3">⚡ Accesos Directos</h3>
                 <div className="space-y-2">
-                  <button onClick={() => setActiveTab("updates")} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground font-heading font-bold text-sm hover:opacity-90 transition w-full">
-                    <Plus size={16} /> Nueva Actualización
+                   <button onClick={() => setActiveTab("updates")} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground font-heading font-bold text-sm hover:opacity-90 transition w-full">
+                     <Plus size={16} /> Crear Update
                   </button>
                   <button onClick={() => navigate("/actualizaciones")} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted text-muted-foreground font-heading font-bold text-sm hover:bg-muted/80 transition w-full">
                     <Eye size={16} /> Ver Página Pública
@@ -552,9 +552,9 @@ const Admin = () => {
         {activeTab === "updates" && (
           <div className="space-y-6">
             <div className="card-medieval p-6">
-              <h3 className="font-heading font-bold text-lg mb-4">Nueva Actualización</h3>
+              <h3 className="font-heading font-bold text-lg mb-4">✏️ Crear Nuevo Update</h3>
               <div className="mb-4">
-                <p className="text-sm font-heading font-semibold mb-2">Foro / Modo de Juego</p>
+                <p className="text-sm font-heading font-semibold mb-2">Selecciona la modalidad</p>
                 <div className="flex flex-wrap gap-2">
                   {GAME_CATEGORIES.map((cat) => (
                     <button
@@ -669,7 +669,7 @@ const Admin = () => {
               </div>
             ))}
             {reviews.length === 0 && (
-              <p className="text-center text-muted-foreground font-body py-8">No hay reseñas.</p>
+              <p className="text-center text-muted-foreground font-body py-8">Aún no hay reseñas de jugadores.</p>
             )}
           </div>
         )}
@@ -786,7 +786,7 @@ const Admin = () => {
                     </div>
                   ))}
                   {filteredTickets.length === 0 && (
-                    <p className="text-center text-muted-foreground font-body py-8">No se encontraron tickets.</p>
+                    <p className="text-center text-muted-foreground font-body py-8">No hay tickets que coincidan con tu búsqueda.</p>
                   )}
                 </div>
               </>
@@ -805,8 +805,8 @@ const Admin = () => {
                     <div className="flex items-center gap-3">
                       {type === "minecraft" ? <Gamepad2 className="text-primary" size={24} /> : <MessageCircle className="text-accent" size={24} />}
                       <div>
-                        <h3 className="font-heading font-bold text-sm">Formulario {type === "minecraft" ? "Minecraft" : "Discord"}</h3>
-                        <p className="text-xs text-muted-foreground font-body">{formSettings[type] ? "Activo" : "Desactivado"}</p>
+                        <h3 className="font-heading font-bold text-sm">Formulario {type === "minecraft" ? "Minecraft ⛏️" : "Discord 💬"}</h3>
+                        <p className="text-xs text-muted-foreground font-body">{formSettings[type] ? "Abierto para todos" : "Cerrado — no visible para nadie"}</p>
                       </div>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
@@ -833,17 +833,17 @@ const Admin = () => {
 
             {/* Analytics cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <StatCard icon={ClipboardList} value={applications.length} label="Total Solicitudes" />
-              <StatCard icon={Gamepad2} value={mcAppsCount} label="Minecraft" color="text-primary" />
-              <StatCard icon={MessageCircle} value={dcAppsCount} label="Discord" color="text-accent" />
-              <StatCard icon={Clock} value={pendingAppsCount} label="Pendientes" color="text-destructive" />
+              <StatCard icon={ClipboardList} value={applications.length} label="Solicitudes Totales" />
+              <StatCard icon={Gamepad2} value={mcAppsCount} label="De Minecraft" color="text-primary" />
+              <StatCard icon={MessageCircle} value={dcAppsCount} label="De Discord" color="text-accent" />
+              <StatCard icon={Clock} value={pendingAppsCount} label="Sin Revisar" color="text-destructive" />
             </div>
 
             {/* Filters */}
             <div className="flex flex-wrap gap-2">
               {(["all", "pending", "reviewed"] as const).map((f) => (
                 <button key={f} onClick={() => setAppFilter(f)} className={`px-4 py-2 rounded-lg font-heading font-bold text-xs transition border-2 ${appFilter === f ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border text-muted-foreground hover:border-primary/50"}`}>
-                  {f === "all" ? "Todos" : f === "pending" ? "Pendientes" : "Revisados"}
+                  {f === "all" ? "Ver Todos" : f === "pending" ? "Sin Revisar" : "Ya Revisados"}
                 </button>
               ))}
               <div className="w-px bg-border mx-1" />
@@ -926,7 +926,7 @@ const Admin = () => {
                   </div>
                 ))}
                 {filteredApps.length === 0 && (
-                  <p className="text-center text-muted-foreground font-body py-8">No se encontraron solicitudes.</p>
+                  <p className="text-center text-muted-foreground font-body py-8">No hay solicitudes con estos filtros.</p>
                 )}
               </div>
             )}
