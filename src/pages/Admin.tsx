@@ -49,7 +49,7 @@ const StatCard = ({ icon: Icon, value, label, color = "text-primary" }: { icon: 
 
 const Admin = () => {
   const navigate = useNavigate();
-  const { user, loading: authLoading, isAdmin, signOut } = useAuth();
+  const { user, loading: authLoading, isAdmin, isGoogleUser, signOut } = useAuth();
   const server = useServerStatus();
   const [updates, setUpdates] = useState<Update[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
