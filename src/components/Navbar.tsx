@@ -118,6 +118,15 @@ const Navbar = () => {
           >
             Copiar IP
           </button>
+          {user && isAdmin && (
+            <Link
+              to="/admin"
+              className="mt-2 w-full px-4 py-2 rounded-lg bg-accent text-accent-foreground font-heading font-bold text-sm flex items-center justify-center gap-1.5"
+              onClick={() => setOpen(false)}
+            >
+              <Shield size={14} /> Admin P.
+            </Link>
+          )}
         </div>
       )}
     </nav>
