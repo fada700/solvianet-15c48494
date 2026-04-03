@@ -4,6 +4,7 @@ import Layout from "@/components/Layout";
 import AnimatedSection from "@/components/AnimatedSection";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { lovable } from "@/integrations/lovable/index";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Ticket, Send, Clock, CheckCircle2, MessageSquare, AlertTriangle,
