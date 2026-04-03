@@ -926,7 +926,7 @@ const Admin = () => {
                   </div>
                 ))}
                 {filteredApps.length === 0 && (
-                  <p className="text-center text-muted-foreground font-body py-8">No se encontraron solicitudes.</p>
+                  <p className="text-center text-muted-foreground font-body py-8">No hay solicitudes con estos filtros.</p>
                 )}
               </div>
             )}
