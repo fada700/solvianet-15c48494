@@ -88,6 +88,7 @@ const Admin = () => {
   useEffect(() => {
     if (authLoading) return;
     if (!user) { navigate("/login"); return; }
+    if (isGoogleUser) { navigate("/"); return; }
     if (!isAdmin) return;
 
     const fetchData = async () => {
