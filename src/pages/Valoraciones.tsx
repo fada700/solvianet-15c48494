@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import Layout from "@/components/Layout";
-import { Star, Send, Clock, AlertCircle, LogIn } from "lucide-react";
+import { Star, Send, Clock, AlertCircle, LogIn, ShieldAlert } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable/index";
 import { useAuth } from "@/hooks/useAuth";
-import { Link } from "react-router-dom";
 
 interface Review {
   id: string;
