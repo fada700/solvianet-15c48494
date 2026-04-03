@@ -669,7 +669,7 @@ const Admin = () => {
               </div>
             ))}
             {reviews.length === 0 && (
-              <p className="text-center text-muted-foreground font-body py-8">No hay reseñas.</p>
+              <p className="text-center text-muted-foreground font-body py-8">Aún no hay reseñas de jugadores.</p>
             )}
           </div>
         )}
