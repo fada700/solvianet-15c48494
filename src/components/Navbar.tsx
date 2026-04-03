@@ -68,6 +68,14 @@ const Navbar = () => {
           >
             Copiar IP
           </button>
+          {user && isAdmin && (
+            <Link
+              to="/admin"
+              className="ml-1 px-4 py-2 rounded-lg bg-accent text-accent-foreground font-heading font-bold text-sm flex items-center gap-1.5 hover:opacity-90 transition"
+            >
+              <Shield size={14} /> Admin P.
+            </Link>
+          )}
         </div>
 
         {/* Mobile toggle */}
