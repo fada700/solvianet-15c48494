@@ -2,11 +2,16 @@ import { useState, useEffect, createContext, useContext, useCallback, useRef } f
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 
+type AuthMethod = "google" | "staff" | null;
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
   isAdmin: boolean;
+  authMethod: AuthMethod;
+  isGoogleUser: boolean;
+  isStaffUser: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
