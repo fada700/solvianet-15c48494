@@ -416,8 +416,8 @@ const Admin = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="font-heading text-2xl font-bold text-gradient-gold">Panel Admin</h1>
-            <p className="text-muted-foreground text-sm font-body">Bienvenido, {user.email?.split("@")[0]}</p>
+            <h1 className="font-heading text-2xl font-bold text-gradient-gold">Panel de Administración</h1>
+            <p className="text-muted-foreground text-sm font-body">Hola, {user.email?.split("@")[0]} 👋</p>
           </div>
           <button onClick={handleSignOut} className="flex items-center gap-2 px-4 py-2 bg-muted text-muted-foreground rounded-lg font-heading font-bold text-sm hover:bg-muted/80 transition">
             <LogOut size={16} /> Salir
