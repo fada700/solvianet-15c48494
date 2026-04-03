@@ -516,7 +516,7 @@ const Admin = () => {
 
               {/* Star distribution */}
               <div className="card-medieval p-5">
-                <h3 className="font-heading font-bold mb-3">Distribución de Estrellas</h3>
+                <h3 className="font-heading font-bold mb-3">⭐ Cómo nos califican</h3>
                 {starDistribution.map((s) => (
                   <div key={s.stars} className="flex items-center gap-2 mb-1">
                     <span className="text-sm font-body w-4">{s.stars}</span>
