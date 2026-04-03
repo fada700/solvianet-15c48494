@@ -62,10 +62,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(newSession?.user ?? null);
 
       if (newSession?.user) {
+        const provider = newSession.user.app_metadata?.provider;
+        const method: AuthMethod = provider === "google" ? "google" : "staff";
+        if (mounted) setAuthMethod(method);
+
         const admin = await checkAdmin(newSession.user.id);
         if (mounted) setIsAdmin(admin);
       } else {
         setIsAdmin(false);
+        setAuthMethod(null);
       }
       if (mounted) setLoading(false);
     };
