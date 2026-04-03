@@ -496,7 +496,7 @@ const Admin = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Updates by category */}
               <div className="card-medieval p-5">
-                <h3 className="font-heading font-bold mb-3">Actualizaciones por Modo</h3>
+                <h3 className="font-heading font-bold mb-3">📊 Updates por Modalidad</h3>
                 {updatesByCategory.map((cat) => (
                   <div key={cat.id} className="mb-2">
                     <div className="flex justify-between text-sm font-body mb-1">
