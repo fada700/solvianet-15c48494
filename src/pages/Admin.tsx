@@ -833,10 +833,10 @@ const Admin = () => {
 
             {/* Analytics cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <StatCard icon={ClipboardList} value={applications.length} label="Total Solicitudes" />
-              <StatCard icon={Gamepad2} value={mcAppsCount} label="Minecraft" color="text-primary" />
-              <StatCard icon={MessageCircle} value={dcAppsCount} label="Discord" color="text-accent" />
-              <StatCard icon={Clock} value={pendingAppsCount} label="Pendientes" color="text-destructive" />
+              <StatCard icon={ClipboardList} value={applications.length} label="Solicitudes Totales" />
+              <StatCard icon={Gamepad2} value={mcAppsCount} label="De Minecraft" color="text-primary" />
+              <StatCard icon={MessageCircle} value={dcAppsCount} label="De Discord" color="text-accent" />
+              <StatCard icon={Clock} value={pendingAppsCount} label="Sin Revisar" color="text-destructive" />
             </div>
 
             {/* Filters */}
