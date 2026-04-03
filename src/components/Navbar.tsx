@@ -94,7 +94,12 @@ const Navbar = () => {
       {/* Mobile menu */}
       {open && (
         <div className="md:hidden border-t border-border bg-background px-4 pb-4">
-          {navLinks.map((link) =>
+          {navLinks
+            .filter((link) => {
+              if (isStaffUser && link.path !== "/") return false;
+              return true;
+            })
+            .map((link) =>
             link.external ? (
               <a
                 key={link.name}
