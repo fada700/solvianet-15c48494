@@ -37,7 +37,14 @@ const Navbar = () => {
 
         {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-1">
-          {navLinks.map((link) =>
+          {navLinks
+            .filter((link) => {
+              // Staff users can only see Inicio
+              if (isStaffUser && link.path !== "/") return false;
+              // Google users can't see login
+              return true;
+            })
+            .map((link) =>
             link.external ? (
               <a
                 key={link.name}
