@@ -805,8 +805,8 @@ const Admin = () => {
                     <div className="flex items-center gap-3">
                       {type === "minecraft" ? <Gamepad2 className="text-primary" size={24} /> : <MessageCircle className="text-accent" size={24} />}
                       <div>
-                        <h3 className="font-heading font-bold text-sm">Formulario {type === "minecraft" ? "Minecraft" : "Discord"}</h3>
-                        <p className="text-xs text-muted-foreground font-body">{formSettings[type] ? "Activo" : "Desactivado"}</p>
+                        <h3 className="font-heading font-bold text-sm">Formulario {type === "minecraft" ? "Minecraft ⛏️" : "Discord 💬"}</h3>
+                        <p className="text-xs text-muted-foreground font-body">{formSettings[type] ? "Abierto para todos" : "Cerrado — no visible para nadie"}</p>
                       </div>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
