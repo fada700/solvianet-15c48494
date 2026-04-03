@@ -554,7 +554,7 @@ const Admin = () => {
             <div className="card-medieval p-6">
               <h3 className="font-heading font-bold text-lg mb-4">✏️ Crear Nuevo Update</h3>
               <div className="mb-4">
-                <p className="text-sm font-heading font-semibold mb-2">Foro / Modo de Juego</p>
+                <p className="text-sm font-heading font-semibold mb-2">Selecciona la modalidad</p>
                 <div className="flex flex-wrap gap-2">
                   {GAME_CATEGORIES.map((cat) => (
                     <button
