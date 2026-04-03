@@ -23,6 +23,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [authMethod, setAuthMethod] = useState<AuthMethod>(null);
   const adminCacheRef = useRef<Record<string, boolean>>({});
   const initializedRef = useRef(false);
 
