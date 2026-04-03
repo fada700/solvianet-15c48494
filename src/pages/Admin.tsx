@@ -455,7 +455,7 @@ const Admin = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Server status */}
               <div className="card-medieval p-5">
-                <h3 className="font-heading font-bold mb-3">Estado del Servidor</h3>
+                <h3 className="font-heading font-bold mb-3">🖥️ Estado del Servidor</h3>
                 <div className="flex items-center gap-2 mb-3">
                   {server.loading ? <Activity className="animate-spin text-muted-foreground" size={18} /> : server.online ? <Wifi className="text-secondary" size={18} /> : <WifiOff className="text-destructive" size={18} />}
                   <span className="font-body text-sm">{server.loading ? "Consultando..." : server.online ? "Activo" : "Apagado"}</span>
