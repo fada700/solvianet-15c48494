@@ -843,7 +843,7 @@ const Admin = () => {
             <div className="flex flex-wrap gap-2">
               {(["all", "pending", "reviewed"] as const).map((f) => (
                 <button key={f} onClick={() => setAppFilter(f)} className={`px-4 py-2 rounded-lg font-heading font-bold text-xs transition border-2 ${appFilter === f ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border text-muted-foreground hover:border-primary/50"}`}>
-                  {f === "all" ? "Todos" : f === "pending" ? "Pendientes" : "Revisados"}
+                  {f === "all" ? "Ver Todos" : f === "pending" ? "Sin Revisar" : "Ya Revisados"}
                 </button>
               ))}
               <div className="w-px bg-border mx-1" />
