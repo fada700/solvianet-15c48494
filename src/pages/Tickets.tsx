@@ -220,13 +220,10 @@ const Tickets = () => {
 
   // --- FUNCIÓN CORREGIDA AQUÍ ---
   const handleGoogleLogin = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: 'https://solivanmc.vercel.app',
-      },
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
     });
-    if (error) toast.error("Error al iniciar sesión con Google");
+    if (result.error) toast.error("Error al iniciar sesión con Google");
   };
   // -----------------------------
 
