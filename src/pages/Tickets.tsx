@@ -300,6 +300,20 @@ const Tickets = () => {
     );
   }
 
+  if (isStaffUser) {
+    return (
+      <Layout>
+        <AnimatedSection className="container mx-auto px-4 py-16 max-w-2xl text-center">
+          <ShieldCheck className="mx-auto text-muted-foreground mb-4" size={48} />
+          <h1 className="font-heading text-3xl font-bold text-gradient-gold mb-4">Acceso Restringido</h1>
+          <p className="text-muted-foreground font-body mb-4">
+            Las cuentas de staff no pueden crear tickets. Inicia sesión con Google para usar el sistema de soporte.
+          </p>
+        </AnimatedSection>
+      </Layout>
+    );
+  }
+
   if (!user) {
     return (
       <Layout>
