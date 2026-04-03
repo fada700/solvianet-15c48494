@@ -111,9 +111,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = useCallback(async () => {
     setIsAdmin(false);
+    setAuthMethod(null);
     adminCacheRef.current = {};
     await supabase.auth.signOut();
   }, []);
+
+  const isGoogleUser = authMethod === "google";
+  const isStaffUser = authMethod === "staff";
 
   return (
     <AuthContext.Provider value={{ user, session, loading, isAdmin, signIn, signOut }}>
