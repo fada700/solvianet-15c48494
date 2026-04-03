@@ -488,7 +488,7 @@ const Admin = () => {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-muted-foreground text-sm font-body">Sin actividad reciente</p>
+                  <p className="text-muted-foreground text-sm font-body">Nada por aquí todavía</p>
                 )}
               </div>
             </div>
