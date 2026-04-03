@@ -49,7 +49,7 @@ const StatCard = ({ icon: Icon, value, label, color = "text-primary" }: { icon: 
 
 const Admin = () => {
   const navigate = useNavigate();
-  const { user, loading: authLoading, isAdmin, signOut } = useAuth();
+  const { user, loading: authLoading, isAdmin, isGoogleUser, signOut } = useAuth();
   const server = useServerStatus();
   const [updates, setUpdates] = useState<Update[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -88,6 +88,7 @@ const Admin = () => {
   useEffect(() => {
     if (authLoading) return;
     if (!user) { navigate("/login"); return; }
+    if (isGoogleUser) { navigate("/"); return; }
     if (!isAdmin) return;
 
     const fetchData = async () => {

@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import Layout from "@/components/Layout";
-import { Star, Send, Clock, AlertCircle, LogIn } from "lucide-react";
+import { Star, Send, Clock, AlertCircle, LogIn, ShieldAlert } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable/index";
 import { useAuth } from "@/hooks/useAuth";
-import { Link } from "react-router-dom";
 
 interface Review {
   id: string;
@@ -17,7 +17,7 @@ const COOLDOWN_KEY = "solvianmc_review_cooldown";
 const COOLDOWN_MS = 10 * 60 * 1000;
 
 const Valoraciones = () => {
-  const { user } = useAuth();
+  const { user, isStaffUser } = useAuth();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [name, setName] = useState("");
   const [stars, setStars] = useState(5);
@@ -103,13 +103,24 @@ const Valoraciones = () => {
         <div className="card-medieval p-6 mb-8">
           <h3 className="font-heading font-bold text-lg mb-4">Deja tu reseña</h3>
 
-          {!user ? (
+          {isStaffUser ? (
+            <div className="text-center py-4">
+              <ShieldAlert className="mx-auto mb-2 text-muted-foreground" size={24} />
+              <p className="text-muted-foreground font-body text-sm">Las cuentas de staff no pueden dejar reseñas. Inicia sesión con Google para hacerlo.</p>
+            </div>
+          ) : !user ? (
             <div className="text-center py-4">
               <AlertCircle className="mx-auto mb-2 text-muted-foreground" size={24} />
-              <p className="text-muted-foreground font-body text-sm mb-3">Debes iniciar sesión para dejar una reseña.</p>
-              <Link to="/login" className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-heading font-bold text-sm">
-                <LogIn size={16} /> Iniciar sesión →
-              </Link>
+              <p className="text-muted-foreground font-body text-sm mb-3">Debes iniciar sesión con Google para dejar una reseña.</p>
+              <button
+                onClick={async () => {
+                  const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
+                  if (result.error) console.error(result.error);
+                }}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-heading font-bold text-sm"
+              >
+                <LogIn size={16} /> Iniciar sesión con Google
+              </button>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">

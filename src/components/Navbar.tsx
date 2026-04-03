@@ -20,7 +20,7 @@ const navLinks = [
 const Navbar = () => {
   const [open, setOpen] = useState(false);
   const location = useLocation();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isStaffUser, isGoogleUser } = useAuth();
 
   const copyIP = () => {
     navigator.clipboard.writeText("play.solvianmc.net");
@@ -37,7 +37,14 @@ const Navbar = () => {
 
         {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-1">
-          {navLinks.map((link) =>
+          {navLinks
+            .filter((link) => {
+              // Staff users can only see Inicio
+              if (isStaffUser && link.path !== "/") return false;
+              // Google users can't see login
+              return true;
+            })
+            .map((link) =>
             link.external ? (
               <a
                 key={link.name}
@@ -87,7 +94,12 @@ const Navbar = () => {
       {/* Mobile menu */}
       {open && (
         <div className="md:hidden border-t border-border bg-background px-4 pb-4">
-          {navLinks.map((link) =>
+          {navLinks
+            .filter((link) => {
+              if (isStaffUser && link.path !== "/") return false;
+              return true;
+            })
+            .map((link) =>
             link.external ? (
               <a
                 key={link.name}

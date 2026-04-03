@@ -2,11 +2,16 @@ import { useState, useEffect, createContext, useContext, useCallback, useRef } f
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 
+type AuthMethod = "google" | "staff" | null;
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
   isAdmin: boolean;
+  authMethod: AuthMethod;
+  isGoogleUser: boolean;
+  isStaffUser: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
@@ -18,6 +23,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [authMethod, setAuthMethod] = useState<AuthMethod>(null);
   const adminCacheRef = useRef<Record<string, boolean>>({});
   const initializedRef = useRef(false);
 
@@ -56,10 +62,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(newSession?.user ?? null);
 
       if (newSession?.user) {
+        const provider = newSession.user.app_metadata?.provider;
+        const method: AuthMethod = provider === "google" ? "google" : "staff";
+        if (mounted) setAuthMethod(method);
+
         const admin = await checkAdmin(newSession.user.id);
         if (mounted) setIsAdmin(admin);
       } else {
         setIsAdmin(false);
+        setAuthMethod(null);
       }
       if (mounted) setLoading(false);
     };
@@ -100,12 +111,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = useCallback(async () => {
     setIsAdmin(false);
+    setAuthMethod(null);
     adminCacheRef.current = {};
     await supabase.auth.signOut();
   }, []);
 
+  const isGoogleUser = authMethod === "google";
+  const isStaffUser = authMethod === "staff";
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, isAdmin, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, isAdmin, authMethod, isGoogleUser, isStaffUser, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );
