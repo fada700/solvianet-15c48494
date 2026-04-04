@@ -333,7 +333,7 @@ const Admin = () => {
     setTimeout(() => ticketMsgEndRef.current?.scrollIntoView({ behavior: "smooth" }), 200);
   };
 
-// QUESTION_LABELS moved to module scope above
+
 
   const handleStaffSend = async (e: React.FormEvent) => {
     e.preventDefault();
