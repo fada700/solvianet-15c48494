@@ -977,6 +977,44 @@ const QUESTION_LABELS: Record<string, Record<string, string>> = {
           </div>
         )}
 
+const QUESTION_LABELS: Record<string, Record<string, string>> = {
+  minecraft: {
+    mc_nick: "¿Cuál es tu nick de Minecraft?",
+    dc_nick: "¿Cuál es tu nick de Discord?",
+    premium: "¿Eres premium o no premium?",
+    edad: "¿Cuántos años tienes?",
+    por_que: "¿Por qué quieres ser staff en SolvianMC Network?",
+    experiencia: "¿Tienes experiencia previa como staff? ¿En qué servidores y hasta qué rango?",
+    reglas: "¿Conoces y respetas las reglas del servidor?",
+    discusion: "¿Cómo actuarías ante una discusión entre jugadores?",
+    procedimiento: "¿Qué procedimiento seguirías antes de sancionar a alguien?",
+    priorizar: "¿Cómo priorizas problemas cuando estás solo?",
+    abuso_rango: "¿Qué harías si un compañero staff abusa de su rango?",
+    conflicto_staff: "¿Cómo manejarías un conflicto dentro del staff?",
+    mala_sancion: "¿Qué harías si aplicas mal una sanción?",
+    solo_equipo: "¿Prefieres trabajar solo o en equipo? ¿Por qué?",
+    respeto: "¿Qué harías si no te respetan? ¿Y si a tu compañero no lo respetan?",
+    comandos: "¿Conoces comandos básicos de moderación? Nómbralos y explícalos",
+    horas: "¿Cuántas horas le podrías dedicar al staff diario?",
+    ideas: "¿Qué ideas tienes para mejorar SolvianMC?",
+  },
+  discord: {
+    dc_nick: "¿Cuál es tu nick de Discord?",
+    dc_id: "¿Cuál es tu ID de Discord?",
+    edad: "¿Cuántos años tienes?",
+    experiencia_dc: "¿Tienes experiencia previa gestionando servidores de Discord?",
+    incumplimiento: "¿Qué harías si un usuario está incumpliendo las normas?",
+    bots: "¿Qué bots de moderación y automatización conoces?",
+    por_que: "¿Por qué quieres ser staff de Discord en SolvianMC?",
+    reglas: "¿Conoces y respetas las reglas del servidor?",
+    sanciones: "¿Qué tipos de sanciones conoces? Nombra y explica cada una",
+    raid: "¿Cómo actuarías ante una raid en el servidor?",
+    ticket: "¿Cómo gestionarías un ticket de ayuda?",
+    solo_equipo: "¿Prefieres trabajar solo o en equipo? ¿Por qué?",
+    tiempo: "¿Cuánto tiempo puedes dedicar semanalmente al Discord?",
+  },
+};
+
 
         <AnimatePresence>
           {deleteTarget && (
