@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import AnimatedSection from "@/components/AnimatedSection";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
+
 import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
 import { Shield, Gamepad2, MessageCircle, Send, CheckCircle2, LogIn, Lock } from "lucide-react";
@@ -75,16 +75,14 @@ const Aplicaciones = () => {
 
   const handleGoogleSignIn = async () => {
     setSigningIn(true);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin + "/aplicaciones" },
     });
-    if (result.error) {
+    if (error) {
       toast.error("Error al iniciar sesión con Google");
       setSigningIn(false);
-      return;
     }
-    if (result.redirected) return;
-    setSigningIn(false);
   };
 
   const questions = selectedForm === "minecraft" ? MINECRAFT_QUESTIONS : DISCORD_QUESTIONS;

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Shield } from "lucide-react";
+import { Menu, X, Shield, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import logo from "@/assets/solvianmc.png";
@@ -20,7 +20,12 @@ const navLinks = [
 const Navbar = () => {
   const [open, setOpen] = useState(false);
   const location = useLocation();
-  const { user, isAdmin, isStaffUser, isGoogleUser } = useAuth();
+  const { user, isAdmin, isStaffUser, isGoogleUser, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+    toast.success("Sesión cerrada");
+  };
 
   const copyIP = () => {
     navigator.clipboard.writeText("play.solvianmc.net");
@@ -83,6 +88,14 @@ const Navbar = () => {
               <Shield size={14} /> Admin P.
             </Link>
           )}
+          {user && (
+            <button
+              onClick={handleSignOut}
+              className="ml-1 px-3 py-2 rounded-lg text-sm font-body font-semibold text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors flex items-center gap-1.5"
+            >
+              <LogOut size={14} /> Salir
+            </button>
+          )}
         </div>
 
         {/* Mobile toggle */}
@@ -138,6 +151,14 @@ const Navbar = () => {
             >
               <Shield size={14} /> Admin P.
             </Link>
+          )}
+          {user && (
+            <button
+              onClick={() => { handleSignOut(); setOpen(false); }}
+              className="mt-2 w-full px-4 py-2 rounded-lg text-sm font-body font-semibold text-destructive hover:bg-destructive/10 transition-colors flex items-center justify-center gap-1.5"
+            >
+              <LogOut size={14} /> Cerrar Sesión
+            </button>
           )}
         </div>
       )}
