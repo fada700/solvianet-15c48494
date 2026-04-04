@@ -884,12 +884,15 @@ const Admin = () => {
                 </p>
 
                 <div className="space-y-4">
-                  {Object.entries(selectedApp.answers || {}).map(([key, value]) => (
-                    <div key={key} className="p-3 bg-muted/30 rounded-lg">
-                      <p className="text-xs font-heading font-semibold text-muted-foreground mb-1">{key}</p>
-                      <p className="font-body text-sm">{String(value)}</p>
-                    </div>
-                  ))}
+                  {Object.entries(selectedApp.answers || {}).map(([key, value]) => {
+                    const questionLabel = QUESTION_LABELS[selectedApp.form_type]?.[key] || key;
+                    return (
+                      <div key={key} className="p-4 bg-muted/30 rounded-lg border border-border/50">
+                        <p className="text-xs font-heading font-bold text-primary mb-2">📋 {questionLabel}</p>
+                        <p className="font-body text-sm text-foreground/90 whitespace-pre-wrap">{String(value)}</p>
+                      </div>
+                    );
+                  })}
                 </div>
 
                 <div className="flex gap-2 mt-6">
