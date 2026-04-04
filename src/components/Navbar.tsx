@@ -91,9 +91,9 @@ const Navbar = () => {
           {user && (
             <button
               onClick={handleSignOut}
-              className="ml-1 px-3 py-2 rounded-lg text-sm font-body font-semibold text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors flex items-center gap-1.5"
+              className="ml-2 px-4 py-2 rounded-lg text-sm font-heading font-bold bg-destructive/15 text-destructive border border-destructive/30 hover:bg-destructive hover:text-destructive-foreground transition-all duration-200 flex items-center gap-1.5"
             >
-              <LogOut size={14} /> Salir
+              <LogOut size={15} /> Cerrar Sesión
             </button>
           )}
         </div>
@@ -155,9 +155,9 @@ const Navbar = () => {
           {user && (
             <button
               onClick={() => { handleSignOut(); setOpen(false); }}
-              className="mt-2 w-full px-4 py-2 rounded-lg text-sm font-body font-semibold text-destructive hover:bg-destructive/10 transition-colors flex items-center justify-center gap-1.5"
+              className="mt-2 w-full px-4 py-2 rounded-lg text-sm font-heading font-bold bg-destructive/15 text-destructive border border-destructive/30 hover:bg-destructive hover:text-destructive-foreground transition-all duration-200 flex items-center justify-center gap-1.5"
             >
-              <LogOut size={14} /> Cerrar Sesión
+              <LogOut size={15} /> Cerrar Sesión
             </button>
           )}
         </div>

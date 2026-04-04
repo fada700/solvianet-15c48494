@@ -88,8 +88,11 @@ const Admin = () => {
   useEffect(() => {
     if (authLoading) return;
     if (!user) { navigate("/login"); return; }
-    if (isGoogleUser) { navigate("/"); return; }
-    if (!isAdmin) return;
+    if (!isAdmin || isGoogleUser) {
+      toast.error("No tienes permisos para acceder al panel de administración");
+      navigate("/");
+      return;
+    }
 
     const fetchData = async () => {
       const [uRes, rRes, tRes, fsRes, apRes] = await Promise.all([
