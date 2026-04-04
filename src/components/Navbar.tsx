@@ -20,7 +20,12 @@ const navLinks = [
 const Navbar = () => {
   const [open, setOpen] = useState(false);
   const location = useLocation();
-  const { user, isAdmin, isStaffUser, isGoogleUser } = useAuth();
+  const { user, isAdmin, isStaffUser, isGoogleUser, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+    toast.success("Sesión cerrada");
+  };
 
   const copyIP = () => {
     navigator.clipboard.writeText("play.solvianmc.net");
