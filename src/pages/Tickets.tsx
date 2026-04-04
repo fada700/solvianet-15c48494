@@ -220,10 +220,11 @@ const Tickets = () => {
 
   // --- FUNCIÓN CORREGIDA AQUÍ ---
   const handleGoogleLogin = async () => {
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin + "/tickets" },
     });
-    if (result.error) toast.error("Error al iniciar sesión con Google");
+    if (error) toast.error("Error al iniciar sesión con Google");
   };
   // -----------------------------
 
