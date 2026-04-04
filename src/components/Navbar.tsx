@@ -152,6 +152,14 @@ const Navbar = () => {
               <Shield size={14} /> Admin P.
             </Link>
           )}
+          {user && (
+            <button
+              onClick={() => { handleSignOut(); setOpen(false); }}
+              className="mt-2 w-full px-4 py-2 rounded-lg text-sm font-body font-semibold text-destructive hover:bg-destructive/10 transition-colors flex items-center justify-center gap-1.5"
+            >
+              <LogOut size={14} /> Cerrar Sesión
+            </button>
+          )}
         </div>
       )}
     </nav>

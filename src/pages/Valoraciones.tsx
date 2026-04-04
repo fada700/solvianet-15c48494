@@ -114,8 +114,11 @@ const Valoraciones = () => {
               <p className="text-muted-foreground font-body text-sm mb-3">Debes iniciar sesión con Google para dejar una reseña.</p>
               <button
                 onClick={async () => {
-                  const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
-                  if (result.error) console.error(result.error);
+                  const { error } = await supabase.auth.signInWithOAuth({
+                    provider: "google",
+                    options: { redirectTo: window.location.origin + "/valoraciones" },
+                  });
+                  if (error) console.error(error);
                 }}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-heading font-bold text-sm"
               >
