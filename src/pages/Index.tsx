@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
-import { ShoppingCart, MessageCircle, Youtube, Vote, Sword, Shield, Palmtree, HelpCircle, ChevronDown, Users, Wifi, WifiOff } from "lucide-react";
-import { useState } from "react";
+import { ShoppingCart, MessageCircle, Youtube, Vote, Sword, Shield, Palmtree, HelpCircle, ChevronDown, Users, Wifi, WifiOff, Sparkles } from "lucide-react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import Layout from "@/components/Layout";
 import AnimatedSection from "@/components/AnimatedSection";
@@ -45,7 +46,14 @@ const copyIP = () => {
 
 const Index = () => {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [apertura, setApertura] = useState<{ title: string; content: string } | null>(null);
   const server = useServerStatus();
+
+  useEffect(() => {
+    supabase.from("apertura_settings" as any).select("*").eq("is_active", true).limit(1).maybeSingle().then(({ data }) => {
+      if (data) setApertura(data as any);
+    });
+  }, []);
 
   return (
     <Layout>
@@ -98,6 +106,19 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      {/* Apertura Banner */}
+      {apertura && (
+        <AnimatedSection className="container mx-auto px-4 pt-10 max-w-4xl">
+          <div className="card-medieval p-6 border-2 border-primary glow-gold relative overflow-hidden">
+            <div className="absolute top-0 right-0 bg-primary text-primary-foreground px-3 py-1 rounded-bl-xl font-heading font-bold text-xs flex items-center gap-1">
+              <Sparkles size={12} /> APERTURA
+            </div>
+            <h2 className="font-heading text-2xl md:text-3xl font-bold text-gradient-gold mb-2 pr-24">{apertura.title}</h2>
+            <p className="text-muted-foreground font-body whitespace-pre-wrap">{apertura.content}</p>
+          </div>
+        </AnimatedSection>
+      )}
 
       {/* Descripción */}
       <AnimatedSection className="container mx-auto px-4 py-16 text-center max-w-3xl">

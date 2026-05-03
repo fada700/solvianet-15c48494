@@ -14,6 +14,7 @@ import { useServerStatus } from "@/hooks/useServerStatus";
 import { motion, AnimatePresence } from "framer-motion";
 
 const GAME_CATEGORIES = [
+  { id: "global", label: "Global" },
   { id: "gens", label: "Gens" },
   { id: "survival", label: "Survival" },
   { id: "arcade", label: "Arcade Games" },
@@ -97,7 +98,11 @@ const Admin = () => {
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [publishing, setPublishing] = useState(false);
-  const [activeTab, setActiveTab] = useState<"dashboard" | "updates" | "reviews" | "tickets" | "applications">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "updates" | "reviews" | "tickets" | "applications" | "apertura">("dashboard");
+  const [apertura, setApertura] = useState<{ id: string; is_active: boolean; title: string; content: string } | null>(null);
+  const [aperturaTitle, setAperturaTitle] = useState("");
+  const [aperturaContent, setAperturaContent] = useState("");
+  const [savingApertura, setSavingApertura] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ type: "update" | "review"; id: string; name: string } | null>(null);
   const [editingUpdate, setEditingUpdate] = useState<string | null>(null);
@@ -133,15 +138,22 @@ const Admin = () => {
     }
 
     const fetchData = async () => {
-      const [uRes, rRes, tRes, fsRes, apRes] = await Promise.all([
+      const [uRes, rRes, tRes, fsRes, apRes, apertRes] = await Promise.all([
         supabase.from("updates").select("*").order("created_at", { ascending: false }),
         supabase.from("reviews").select("*").order("created_at", { ascending: false }),
         supabase.from("tickets").select("*").order("created_at", { ascending: false }),
         supabase.from("form_settings").select("*"),
         supabase.from("staff_applications").select("*").order("created_at", { ascending: false }),
+        supabase.from("apertura_settings" as any).select("*").limit(1).maybeSingle(),
       ]);
       if (uRes.data) setUpdates(uRes.data as Update[]);
       if (rRes.data) setReviews(rRes.data as Review[]);
+      if (apertRes.data) {
+        const a = apertRes.data as any;
+        setApertura(a);
+        setAperturaTitle(a.title);
+        setAperturaContent(a.content);
+      }
       if (fsRes.data) {
         const mc = fsRes.data.find((s: any) => s.form_type === "minecraft");
         const dc = fsRes.data.find((s: any) => s.form_type === "discord");
@@ -451,7 +463,35 @@ const Admin = () => {
     { key: "reviews" as const, icon: MessageSquare, label: `Reseñas (${reviews.length})` },
     { key: "tickets" as const, icon: Ticket, label: `Tickets (${allTickets.length})` },
     { key: "applications" as const, icon: ClipboardList, label: `Aplicaciones (${applications.length})` },
+    { key: "apertura" as const, icon: Award, label: `Apertura ${apertura?.is_active ? "🟢" : "🔴"}` },
   ];
+
+  const saveApertura = async () => {
+    if (!apertura) return;
+    setSavingApertura(true);
+    const { error } = await supabase.from("apertura_settings" as any).update({
+      title: aperturaTitle.trim(),
+      content: aperturaContent.trim(),
+      updated_at: new Date().toISOString(),
+    }).eq("id", apertura.id);
+    setSavingApertura(false);
+    if (!error) {
+      setApertura({ ...apertura, title: aperturaTitle.trim(), content: aperturaContent.trim() });
+      toast.success("Apertura guardada");
+    } else {
+      toast.error("Error al guardar");
+    }
+  };
+
+  const toggleApertura = async () => {
+    if (!apertura) return;
+    const newValue = !apertura.is_active;
+    const { error } = await supabase.from("apertura_settings" as any).update({ is_active: newValue, updated_at: new Date().toISOString() }).eq("id", apertura.id);
+    if (!error) {
+      setApertura({ ...apertura, is_active: newValue });
+      toast.success(newValue ? "Apertura visible en el inicio" : "Apertura oculta");
+    }
+  };
 
   return (
     <Layout>
@@ -689,7 +729,58 @@ const Admin = () => {
           </div>
         )}
 
-        {/* Reviews Tab */}
+        {/* Apertura Tab */}
+        {activeTab === "apertura" && (
+          <div className="card-medieval p-6 space-y-4 max-w-2xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-heading font-bold text-lg">🎉 Banner de Apertura</h3>
+                <p className="text-muted-foreground text-sm font-body">
+                  Aparece en el inicio, justo debajo del Hero. Puedes activarlo o desactivarlo cuando quieras.
+                </p>
+              </div>
+              <button
+                onClick={toggleApertura}
+                disabled={!apertura}
+                className={`px-4 py-2 rounded-lg font-heading font-bold text-sm border-2 ${
+                  apertura?.is_active
+                    ? "bg-secondary text-secondary-foreground border-secondary"
+                    : "bg-muted text-muted-foreground border-border"
+                }`}
+              >
+                {apertura?.is_active ? "🟢 Activo" : "🔴 Oculto"}
+              </button>
+            </div>
+
+            <div>
+              <label className="text-sm font-heading font-semibold block mb-1">Título</label>
+              <input
+                value={aperturaTitle}
+                onChange={(e) => setAperturaTitle(e.target.value)}
+                placeholder="Ej: ¡Gran Apertura SolvianMC!"
+                className="w-full px-4 py-2.5 rounded-lg bg-background border border-border font-body text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-heading font-semibold block mb-1">Contenido</label>
+              <textarea
+                value={aperturaContent}
+                onChange={(e) => setAperturaContent(e.target.value)}
+                placeholder="Mensaje del banner de apertura..."
+                className="w-full px-4 py-2.5 rounded-lg bg-background border border-border font-body text-sm focus:outline-none focus:ring-2 focus:ring-primary min-h-[120px]"
+              />
+            </div>
+
+            <button
+              onClick={saveApertura}
+              disabled={savingApertura || !apertura || !aperturaTitle.trim() || !aperturaContent.trim()}
+              className="px-6 py-2 bg-primary text-primary-foreground rounded-lg font-heading font-bold text-sm flex items-center gap-2 disabled:opacity-50"
+            >
+              <Check size={16} /> {savingApertura ? "Guardando..." : "Guardar Cambios"}
+            </button>
+          </div>
+        )}
         {activeTab === "reviews" && (
           <div className="space-y-4">
             {reviews.map((review) => (
