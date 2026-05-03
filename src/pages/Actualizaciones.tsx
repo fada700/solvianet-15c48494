@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const CATEGORIES = [
   { id: "all", label: "Todas", icon: FileText },
+  { id: "global", label: "Global", icon: FileText },
   { id: "gens", label: "Gens", icon: Gamepad2 },
   { id: "survival", label: "Survival", icon: Leaf },
   { id: "arcade", label: "Arcade Games", icon: Sword },
