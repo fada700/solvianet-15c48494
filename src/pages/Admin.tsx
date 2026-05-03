@@ -729,7 +729,58 @@ const Admin = () => {
           </div>
         )}
 
-        {/* Reviews Tab */}
+        {/* Apertura Tab */}
+        {activeTab === "apertura" && (
+          <div className="card-medieval p-6 space-y-4 max-w-2xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-heading font-bold text-lg">🎉 Banner de Apertura</h3>
+                <p className="text-muted-foreground text-sm font-body">
+                  Aparece en el inicio, justo debajo del Hero. Puedes activarlo o desactivarlo cuando quieras.
+                </p>
+              </div>
+              <button
+                onClick={toggleApertura}
+                disabled={!apertura}
+                className={`px-4 py-2 rounded-lg font-heading font-bold text-sm border-2 ${
+                  apertura?.is_active
+                    ? "bg-secondary text-secondary-foreground border-secondary"
+                    : "bg-muted text-muted-foreground border-border"
+                }`}
+              >
+                {apertura?.is_active ? "🟢 Activo" : "🔴 Oculto"}
+              </button>
+            </div>
+
+            <div>
+              <label className="text-sm font-heading font-semibold block mb-1">Título</label>
+              <input
+                value={aperturaTitle}
+                onChange={(e) => setAperturaTitle(e.target.value)}
+                placeholder="Ej: ¡Gran Apertura SolvianMC!"
+                className="w-full px-4 py-2.5 rounded-lg bg-background border border-border font-body text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-heading font-semibold block mb-1">Contenido</label>
+              <textarea
+                value={aperturaContent}
+                onChange={(e) => setAperturaContent(e.target.value)}
+                placeholder="Mensaje del banner de apertura..."
+                className="w-full px-4 py-2.5 rounded-lg bg-background border border-border font-body text-sm focus:outline-none focus:ring-2 focus:ring-primary min-h-[120px]"
+              />
+            </div>
+
+            <button
+              onClick={saveApertura}
+              disabled={savingApertura || !apertura || !aperturaTitle.trim() || !aperturaContent.trim()}
+              className="px-6 py-2 bg-primary text-primary-foreground rounded-lg font-heading font-bold text-sm flex items-center gap-2 disabled:opacity-50"
+            >
+              <Check size={16} /> {savingApertura ? "Guardando..." : "Guardar Cambios"}
+            </button>
+          </div>
+        )}
         {activeTab === "reviews" && (
           <div className="space-y-4">
             {reviews.map((review) => (
