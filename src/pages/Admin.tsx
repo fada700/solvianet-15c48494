@@ -138,15 +138,22 @@ const Admin = () => {
     }
 
     const fetchData = async () => {
-      const [uRes, rRes, tRes, fsRes, apRes] = await Promise.all([
+      const [uRes, rRes, tRes, fsRes, apRes, apertRes] = await Promise.all([
         supabase.from("updates").select("*").order("created_at", { ascending: false }),
         supabase.from("reviews").select("*").order("created_at", { ascending: false }),
         supabase.from("tickets").select("*").order("created_at", { ascending: false }),
         supabase.from("form_settings").select("*"),
         supabase.from("staff_applications").select("*").order("created_at", { ascending: false }),
+        supabase.from("apertura_settings" as any).select("*").limit(1).maybeSingle(),
       ]);
       if (uRes.data) setUpdates(uRes.data as Update[]);
       if (rRes.data) setReviews(rRes.data as Review[]);
+      if (apertRes.data) {
+        const a = apertRes.data as any;
+        setApertura(a);
+        setAperturaTitle(a.title);
+        setAperturaContent(a.content);
+      }
       if (fsRes.data) {
         const mc = fsRes.data.find((s: any) => s.form_type === "minecraft");
         const dc = fsRes.data.find((s: any) => s.form_type === "discord");
