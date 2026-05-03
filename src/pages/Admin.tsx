@@ -463,7 +463,35 @@ const Admin = () => {
     { key: "reviews" as const, icon: MessageSquare, label: `Reseñas (${reviews.length})` },
     { key: "tickets" as const, icon: Ticket, label: `Tickets (${allTickets.length})` },
     { key: "applications" as const, icon: ClipboardList, label: `Aplicaciones (${applications.length})` },
+    { key: "apertura" as const, icon: Award, label: `Apertura ${apertura?.is_active ? "🟢" : "🔴"}` },
   ];
+
+  const saveApertura = async () => {
+    if (!apertura) return;
+    setSavingApertura(true);
+    const { error } = await supabase.from("apertura_settings" as any).update({
+      title: aperturaTitle.trim(),
+      content: aperturaContent.trim(),
+      updated_at: new Date().toISOString(),
+    }).eq("id", apertura.id);
+    setSavingApertura(false);
+    if (!error) {
+      setApertura({ ...apertura, title: aperturaTitle.trim(), content: aperturaContent.trim() });
+      toast.success("Apertura guardada");
+    } else {
+      toast.error("Error al guardar");
+    }
+  };
+
+  const toggleApertura = async () => {
+    if (!apertura) return;
+    const newValue = !apertura.is_active;
+    const { error } = await supabase.from("apertura_settings" as any).update({ is_active: newValue, updated_at: new Date().toISOString() }).eq("id", apertura.id);
+    if (!error) {
+      setApertura({ ...apertura, is_active: newValue });
+      toast.success(newValue ? "Apertura visible en el inicio" : "Apertura oculta");
+    }
+  };
 
   return (
     <Layout>
