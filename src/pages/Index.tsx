@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
-import { ShoppingCart, MessageCircle, Youtube, Vote, Sword, Shield, Palmtree, HelpCircle, ChevronDown, Users, Wifi, WifiOff } from "lucide-react";
-import { useState } from "react";
+import { ShoppingCart, MessageCircle, Youtube, Vote, Sword, Shield, Palmtree, HelpCircle, ChevronDown, Users, Wifi, WifiOff, Sparkles } from "lucide-react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import Layout from "@/components/Layout";
 import AnimatedSection from "@/components/AnimatedSection";
