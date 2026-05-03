@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      apertura_settings: {
+        Row: {
+          content: string
+          id: string
+          is_active: boolean
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content?: string
+          id?: string
+          is_active?: boolean
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          id?: string
+          is_active?: boolean
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       form_settings: {
         Row: {
           form_type: string
