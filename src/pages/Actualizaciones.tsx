@@ -61,6 +61,7 @@ const Actualizaciones = () => {
       case "gens": return "bg-purple-500/20 text-purple-700 border-purple-500/30";
       case "survival": return "bg-emerald-500/20 text-emerald-700 border-emerald-500/30";
       case "arcade": return "bg-amber-500/20 text-amber-700 border-amber-500/30";
+      case "global": return "bg-primary/20 text-primary border-primary/30";
       default: return "bg-muted text-muted-foreground";
     }
   };
