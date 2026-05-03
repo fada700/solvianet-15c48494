@@ -14,6 +14,7 @@ import { useServerStatus } from "@/hooks/useServerStatus";
 import { motion, AnimatePresence } from "framer-motion";
 
 const GAME_CATEGORIES = [
+  { id: "global", label: "Global" },
   { id: "gens", label: "Gens" },
   { id: "survival", label: "Survival" },
   { id: "arcade", label: "Arcade Games" },
