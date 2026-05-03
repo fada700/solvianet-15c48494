@@ -107,6 +107,19 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Apertura Banner */}
+      {apertura && (
+        <AnimatedSection className="container mx-auto px-4 pt-10 max-w-4xl">
+          <div className="card-medieval p-6 border-2 border-primary glow-gold relative overflow-hidden">
+            <div className="absolute top-0 right-0 bg-primary text-primary-foreground px-3 py-1 rounded-bl-xl font-heading font-bold text-xs flex items-center gap-1">
+              <Sparkles size={12} /> APERTURA
+            </div>
+            <h2 className="font-heading text-2xl md:text-3xl font-bold text-gradient-gold mb-2 pr-24">{apertura.title}</h2>
+            <p className="text-muted-foreground font-body whitespace-pre-wrap">{apertura.content}</p>
+          </div>
+        </AnimatedSection>
+      )}
+
       {/* Descripción */}
       <AnimatedSection className="container mx-auto px-4 py-16 text-center max-w-3xl">
         <h2 className="font-heading text-2xl md:text-3xl font-bold text-gradient-gold mb-4">¿Qué es SolvianMC?</h2>
