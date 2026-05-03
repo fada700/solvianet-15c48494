@@ -46,7 +46,14 @@ const copyIP = () => {
 
 const Index = () => {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [apertura, setApertura] = useState<{ title: string; content: string } | null>(null);
   const server = useServerStatus();
+
+  useEffect(() => {
+    supabase.from("apertura_settings" as any).select("*").eq("is_active", true).limit(1).maybeSingle().then(({ data }) => {
+      if (data) setApertura(data as any);
+    });
+  }, []);
 
   return (
     <Layout>
