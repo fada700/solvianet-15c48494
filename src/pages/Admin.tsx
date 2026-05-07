@@ -438,6 +438,19 @@ const Admin = () => {
     }
   };
 
+  const acceptApplication = async (appId: string) => {
+    const t = toast.loading("Aceptando postulante y enviando DM...");
+    const { data, error } = await supabase.functions.invoke("accept-application", { body: { appId } });
+    toast.dismiss(t);
+    if (error || (data as any)?.error) {
+      toast.error((data as any)?.error || error?.message || "Error al aceptar");
+      return;
+    }
+    setApplications((prev) => prev.map((a) => a.id === appId ? { ...a, status: "accepted" } : a));
+    if (selectedApp?.id === appId) setSelectedApp((prev: any) => prev ? { ...prev, status: "accepted" } : prev);
+    toast.success("¡Postulante aceptado! Rol asignado y DM enviado.");
+  };
+
   const deleteApplication = async (appId: string) => {
     const { error } = await supabase.from("staff_applications").delete().eq("id", appId);
     if (!error) {
