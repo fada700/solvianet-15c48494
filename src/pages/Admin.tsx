@@ -438,6 +438,19 @@ const Admin = () => {
     }
   };
 
+  const acceptApplication = async (appId: string) => {
+    const t = toast.loading("Aceptando postulante y enviando DM...");
+    const { data, error } = await supabase.functions.invoke("accept-application", { body: { appId } });
+    toast.dismiss(t);
+    if (error || (data as any)?.error) {
+      toast.error((data as any)?.error || error?.message || "Error al aceptar");
+      return;
+    }
+    setApplications((prev) => prev.map((a) => a.id === appId ? { ...a, status: "accepted" } : a));
+    if (selectedApp?.id === appId) setSelectedApp((prev: any) => prev ? { ...prev, status: "accepted" } : prev);
+    toast.success("¡Postulante aceptado! Rol asignado y DM enviado.");
+  };
+
   const deleteApplication = async (appId: string) => {
     const { error } = await supabase.from("staff_applications").delete().eq("id", appId);
     if (!error) {
@@ -1025,7 +1038,12 @@ const Admin = () => {
                   })}
                 </div>
 
-                <div className="flex gap-2 mt-6">
+                <div className="flex gap-2 mt-6 flex-wrap">
+                  {selectedApp.status !== "accepted" && (
+                    <button onClick={() => acceptApplication(selectedApp.id)} className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-heading font-bold text-sm hover:opacity-90 transition glow-gold">
+                      <CheckCircle2 size={16} /> Aceptar (DM + Rol)
+                    </button>
+                  )}
                   {selectedApp.status === "pending" && (
                     <button onClick={() => markAsReviewed(selectedApp.id)} className="flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-lg font-heading font-bold text-sm hover:opacity-90 transition">
                       <CheckCircle2 size={16} /> Marcar como Revisado
