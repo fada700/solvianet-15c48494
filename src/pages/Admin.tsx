@@ -1038,7 +1038,12 @@ const Admin = () => {
                   })}
                 </div>
 
-                <div className="flex gap-2 mt-6">
+                <div className="flex gap-2 mt-6 flex-wrap">
+                  {selectedApp.status !== "accepted" && (
+                    <button onClick={() => acceptApplication(selectedApp.id)} className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-heading font-bold text-sm hover:opacity-90 transition glow-gold">
+                      <CheckCircle2 size={16} /> Aceptar (DM + Rol)
+                    </button>
+                  )}
                   {selectedApp.status === "pending" && (
                     <button onClick={() => markAsReviewed(selectedApp.id)} className="flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-lg font-heading font-bold text-sm hover:opacity-90 transition">
                       <CheckCircle2 size={16} /> Marcar como Revisado
