@@ -73,14 +73,14 @@ const Aplicaciones = () => {
     fetchSettings();
   }, []);
 
-  const handleGoogleSignIn = async () => {
+  const handleDiscordSignIn = async () => {
     setSigningIn(true);
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: window.location.origin + "/aplicaciones" },
+      provider: "discord",
+      options: { redirectTo: window.location.origin + "/aplicaciones", scopes: "identify email" },
     });
     if (error) {
-      toast.error("Error al iniciar sesión con Google");
+      toast.error("Error al iniciar sesión con Discord");
       setSigningIn(false);
     }
   };
