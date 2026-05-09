@@ -73,16 +73,11 @@ const Aplicaciones = () => {
     fetchSettings();
   }, []);
 
-  const handleDiscordSignIn = async () => {
+  const handleDiscordSignIn = () => {
     setSigningIn(true);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "discord",
-      options: { redirectTo: window.location.origin + "/aplicaciones", scopes: "identify email" },
-    });
-    if (error) {
-      toast.error("Error al iniciar sesión con Discord");
-      setSigningIn(false);
-    }
+    const final = window.location.origin + "/aplicaciones";
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    window.location.href = `${supabaseUrl}/functions/v1/discord-auth?action=start&final=${encodeURIComponent(final)}`;
   };
 
   const questions = selectedForm === "minecraft" ? MINECRAFT_QUESTIONS : DISCORD_QUESTIONS;
