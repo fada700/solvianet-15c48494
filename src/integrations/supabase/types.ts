@@ -63,6 +63,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          discord_id: string | null
           display_name: string | null
           email: string | null
           id: string
@@ -70,6 +71,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          discord_id?: string | null
           display_name?: string | null
           email?: string | null
           id: string
@@ -77,6 +79,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
+          discord_id?: string | null
           display_name?: string | null
           email?: string | null
           id?: string
