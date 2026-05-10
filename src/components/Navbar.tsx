@@ -29,7 +29,7 @@ const Navbar = () => {
 
   const copyIP = () => {
     navigator.clipboard.writeText("play.solvianmc.net");
-    toast.success("¡IP copiada!", { description: "play.solvianmc.net:25590" });
+    toast.success("¡IP copiada!", { description: "play.solvianmc.net:25565" });
   };
 
   return (
