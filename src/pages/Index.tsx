@@ -24,7 +24,7 @@ const teamMembers = [
 ];
 
 const faqs = [
-  { q: "¿Cómo entro al servidor?", a: "Abre Minecraft, ve a Multijugador y agrega la IP: play.solvianmc.net con el puerto: 25636" },
+  { q: "¿Cómo entro al servidor?", a: "Abre Minecraft, ve a Multijugador y agrega la IP: play.solvianmc.net con el puerto: 25590" },
   { q: "¿Qué versiones soporta?", a: "Actualmente soportamos las versiones más recientes de Minecraft Java Edition." },
   { q: "¿Es premium o no premium?", a: "El servidor es no premium, ¡todos son bienvenidos!" },
   { q: "¿Puedo usar mods?", a: "Solo están permitidos mods de rendimiento como Optifine o Sodium. No se permiten hacks." },
@@ -41,7 +41,7 @@ const rules = [
 
 const copyIP = () => {
   navigator.clipboard.writeText("play.solvianmc.net");
-  toast.success("¡IP copiada!", { description: "IP: play.solvianmc.net — Puerto: 25636" });
+  toast.success("¡IP copiada!", { description: "IP: play.solvianmc.net — Puerto: 25590" });
 };
 
 const Index = () => {
@@ -102,7 +102,7 @@ const Index = () => {
             <button onClick={copyIP} className="px-8 py-3 bg-primary text-primary-foreground font-heading font-bold rounded-xl glow-gold hover:opacity-90 transition text-lg">
               play.solvianmc.net
             </button>
-            <span className="text-background/60 text-xs font-body">Puerto: 25636</span>
+            <span className="text-background/60 text-xs font-body">Puerto: 25590</span>
           </div>
         </div>
       </section>
