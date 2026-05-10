@@ -20,7 +20,7 @@ export function useServerStatus() {
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const res = await fetch("https://api.mcsrvstat.us/2/play.solvianmc.net:25590");
+        const res = await fetch("https://api.mcsrvstat.us/2/play.solvianmc.net:25565");
         const data = await res.json();
         const playersOnline = data.players?.online ?? 0;
         const playersMax = data.players?.max ?? 0;
