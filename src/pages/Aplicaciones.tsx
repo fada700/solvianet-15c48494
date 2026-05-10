@@ -222,9 +222,9 @@ const Aplicaciones = () => {
       <Layout>
         <AnimatedSection className="container mx-auto px-4 py-16 max-w-md text-center">
           <img src={logo} alt="SolvianMC" className="w-16 h-16 rounded-full mx-auto mb-4 border-2 border-primary" />
-          <h1 className="font-heading text-2xl font-bold mb-2">Inicia Sesión</h1>
+          <h1 className="font-heading text-2xl font-bold mb-2">Inicia Sesión con Discord</h1>
           <p className="text-muted-foreground font-body mb-6">
-            Necesitas iniciar sesión con Discord para enviar tu solicitud.
+            {user ? "Necesitas vincular tu cuenta de Discord para enviar tu solicitud." : "Necesitas iniciar sesión con Discord para enviar tu solicitud."}
           </p>
           <button
             onClick={handleDiscordSignIn}
