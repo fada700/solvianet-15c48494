@@ -215,8 +215,9 @@ const Aplicaciones = () => {
     );
   }
 
-  // If not logged in, show Google sign-in
-  if (!user) {
+  // Force Discord login (even if logged in via Google)
+  const hasDiscord = !!(user?.user_metadata?.discord_id);
+  if (!user || !hasDiscord) {
     return (
       <Layout>
         <AnimatedSection className="container mx-auto px-4 py-16 max-w-md text-center">
