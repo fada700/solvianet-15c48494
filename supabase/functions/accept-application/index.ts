@@ -48,15 +48,20 @@ Deno.serve(async (req) => {
     const { data: app, error: appErr } = await admin.from("staff_applications").select("*").eq("id", appId).maybeSingle();
     if (appErr || !app) throw new Error("Application not found");
 
-    // Get discord_id from auth identities
+    // Get discord_id from user metadata (custom Discord OAuth) or profiles table
     const { data: { user: applicant } } = await admin.auth.admin.getUserById(app.user_id);
     if (!applicant) throw new Error("Applicant user not found");
 
-    const discordIdentity = applicant.identities?.find((i: any) => i.provider === "discord");
-    const discordId = discordIdentity?.id || (discordIdentity?.identity_data as any)?.provider_id || (discordIdentity?.identity_data as any)?.sub;
-    if (!discordId) throw new Error("El postulante no inició sesión con Discord — no se puede contactar.");
+    let discordId: string | undefined = (applicant.user_metadata as any)?.discord_id;
+    let username: string = (applicant.user_metadata as any)?.full_name || (applicant.user_metadata as any)?.name || app.user_name || "Postulante";
 
-    const username = (discordIdentity?.identity_data as any)?.full_name || (discordIdentity?.identity_data as any)?.name || app.user_name || "Postulante";
+    if (!discordId) {
+      const { data: profile } = await admin.from("profiles").select("discord_id, display_name").eq("id", app.user_id).maybeSingle();
+      discordId = profile?.discord_id ?? undefined;
+      if (profile?.display_name) username = profile.display_name;
+    }
+
+    if (!discordId) throw new Error("El postulante no inició sesión con Discord — no se puede contactar.");
 
     // 1. Assign role
     const roleResp = await fetch(`https://discord.com/api/v10/guilds/${GUILD_ID}/members/${discordId}/roles/${ROLE_ID}`, {
