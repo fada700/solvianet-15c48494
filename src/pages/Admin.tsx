@@ -435,19 +435,19 @@ const Admin = () => {
   };
 
   // Form toggle handler
-  const toggleForm = async (formType: "minecraft" | "discord") => {
+  const FORM_LABELS: Record<string, string> = { minecraft: "Minecraft", discord: "Discord", creador: "Creador de Contenido" };
+  const toggleForm = async (formType: "minecraft" | "discord" | "creador") => {
     setTogglingForm(formType);
     const newValue = !formSettings[formType];
     const { error } = await supabase.from("form_settings").update({ is_active: newValue, updated_at: new Date().toISOString() }).eq("form_type", formType);
     if (!error) {
       setFormSettings((prev) => ({ ...prev, [formType]: newValue }));
       if (!newValue) {
-        // When disabling, delete all applications of that type
         await supabase.from("staff_applications").delete().eq("form_type", formType);
         setApplications((prev) => prev.filter((a) => a.form_type !== formType));
-        toast.success(`Formulario ${formType === "minecraft" ? "Minecraft" : "Discord"} desactivado. Solicitudes eliminadas.`);
+        toast.success(`Formulario ${FORM_LABELS[formType]} desactivado. Solicitudes eliminadas.`);
       } else {
-        toast.success(`Formulario ${formType === "minecraft" ? "Minecraft" : "Discord"} activado.`);
+        toast.success(`Formulario ${FORM_LABELS[formType]} activado.`);
       }
     }
     setTogglingForm(null);
@@ -464,7 +464,7 @@ const Admin = () => {
 
   const acceptApplication = async (appId: string) => {
     const t = toast.loading("Aceptando postulante y enviando DM...");
-    const { data, error } = await supabase.functions.invoke("accept-application", { body: { appId } });
+    const { data, error } = await supabase.functions.invoke("accept-application", { body: { appId, action: "accept" } });
     toast.dismiss(t);
     if (error || (data as any)?.error) {
       toast.error((data as any)?.error || error?.message || "Error al aceptar");
@@ -473,6 +473,19 @@ const Admin = () => {
     setApplications((prev) => prev.map((a) => a.id === appId ? { ...a, status: "accepted" } : a));
     if (selectedApp?.id === appId) setSelectedApp((prev: any) => prev ? { ...prev, status: "accepted" } : prev);
     toast.success("¡Postulante aceptado! Rol asignado y DM enviado.");
+  };
+
+  const rejectApplication = async (appId: string) => {
+    const t = toast.loading("Rechazando postulante y enviando DM...");
+    const { data, error } = await supabase.functions.invoke("accept-application", { body: { appId, action: "reject" } });
+    toast.dismiss(t);
+    if (error || (data as any)?.error) {
+      toast.error((data as any)?.error || error?.message || "Error al rechazar");
+      return;
+    }
+    setApplications((prev) => prev.map((a) => a.id === appId ? { ...a, status: "rejected" } : a));
+    if (selectedApp?.id === appId) setSelectedApp((prev: any) => prev ? { ...prev, status: "rejected" } : prev);
+    toast.success("Postulante rechazado. DM enviado.");
   };
 
   const deleteApplication = async (appId: string) => {
@@ -484,6 +497,17 @@ const Admin = () => {
     }
   };
 
+  const CREATOR_TYPE_LABELS: Record<string, string> = { youtuber: "YouTuber", streamer: "Streamer", tiktoker: "TikToker", media: "Media" };
+  const getAppTypeBadge = (a: any) => {
+    if (a.form_type === "creador") {
+      const ct = (a.answers as any)?.creator_type;
+      return `Creador · ${CREATOR_TYPE_LABELS[ct] || "?"}`;
+    }
+    if (a.form_type === "minecraft") return "Minecraft";
+    if (a.form_type === "discord") return "Discord";
+    return a.form_type;
+  };
+
   const filteredApps = applications.filter((a) => {
     const matchStatus = appFilter === "all" || a.status === appFilter;
     const matchType = appTypeFilter === "all" || a.form_type === appTypeFilter;
@@ -492,6 +516,7 @@ const Admin = () => {
 
   const mcAppsCount = applications.filter((a) => a.form_type === "minecraft").length;
   const dcAppsCount = applications.filter((a) => a.form_type === "discord").length;
+  const crAppsCount = applications.filter((a) => a.form_type === "creador").length;
   const pendingAppsCount = applications.filter((a) => a.status === "pending").length;
 
   const tabs = [
