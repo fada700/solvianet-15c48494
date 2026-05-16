@@ -144,10 +144,10 @@ const Admin = () => {
   const ticketMsgEndRef = useRef<HTMLDivElement>(null);
 
   // Staff applications state
-  const [formSettings, setFormSettings] = useState<{ minecraft: boolean; discord: boolean }>({ minecraft: false, discord: false });
+  const [formSettings, setFormSettings] = useState<{ minecraft: boolean; discord: boolean; creador: boolean }>({ minecraft: false, discord: false, creador: false });
   const [applications, setApplications] = useState<any[]>([]);
-  const [appFilter, setAppFilter] = useState<"all" | "pending" | "reviewed">("all");
-  const [appTypeFilter, setAppTypeFilter] = useState<"all" | "minecraft" | "discord">("all");
+  const [appFilter, setAppFilter] = useState<"all" | "pending" | "reviewed" | "accepted" | "rejected">("all");
+  const [appTypeFilter, setAppTypeFilter] = useState<"all" | "minecraft" | "discord" | "creador">("all");
   const [selectedApp, setSelectedApp] = useState<any | null>(null);
   const [togglingForm, setTogglingForm] = useState<string | null>(null);
 
