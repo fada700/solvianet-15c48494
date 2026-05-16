@@ -5,7 +5,7 @@ import {
   Plus, Trash2, LogOut, Star, MessageSquare, ShieldAlert, Upload, X,
   Image as ImageIcon, Edit2, Check, XCircle, BarChart3, Users, FileText, TrendingUp,
   Clock, Wifi, WifiOff, Activity, Award, Eye, Ticket, UserCheck, Send, Search,
-  ClipboardList, Gamepad2, MessageCircle, CheckCircle2, Filter,
+  ClipboardList, Gamepad2, MessageCircle, CheckCircle2, Filter, Video,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
