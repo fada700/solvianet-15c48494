@@ -180,7 +180,8 @@ const Admin = () => {
       if (fsRes.data) {
         const mc = fsRes.data.find((s: any) => s.form_type === "minecraft");
         const dc = fsRes.data.find((s: any) => s.form_type === "discord");
-        setFormSettings({ minecraft: mc?.is_active ?? false, discord: dc?.is_active ?? false });
+        const cr = fsRes.data.find((s: any) => s.form_type === "creador");
+        setFormSettings({ minecraft: mc?.is_active ?? false, discord: dc?.is_active ?? false, creador: cr?.is_active ?? false });
       }
       if (apRes.data) setApplications(apRes.data);
       if (tRes.data) {
