@@ -5,7 +5,7 @@ import {
   Plus, Trash2, LogOut, Star, MessageSquare, ShieldAlert, Upload, X,
   Image as ImageIcon, Edit2, Check, XCircle, BarChart3, Users, FileText, TrendingUp,
   Clock, Wifi, WifiOff, Activity, Award, Eye, Ticket, UserCheck, Send, Search,
-  ClipboardList, Gamepad2, MessageCircle, CheckCircle2, Filter,
+  ClipboardList, Gamepad2, MessageCircle, CheckCircle2, Filter, Video,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -55,6 +55,29 @@ const QUESTION_LABELS: Record<string, Record<string, string>> = {
     ticket: "¿Cómo gestionarías un ticket de ayuda?",
     solo_equipo: "¿Prefieres trabajar solo o en equipo? ¿Por qué?",
     tiempo: "¿Cuánto tiempo puedes dedicar semanalmente al Discord?",
+  },
+  creador: {
+    creator_type: "Tipo de creador seleccionado",
+    canal: "Enlace a tu canal",
+    viewers: "Media de viewers en streams de Minecraft",
+    entretener: "¿Cómo mantienes al chat entretenido en momentos lentos?",
+    shaders: "¿Tu PC soporta Shaders en directo?",
+    lore_o_desmadre: "¿Lore o desmadre en directo?",
+    tipo_contenido: "¿Serie episódica o videos de momentos?",
+    replay_mod: "¿Sabes utilizar Replay Mod o cámaras libres?",
+    video_orgulloso: "Link del video del que te sientes más orgulloso",
+    frecuencia: "¿Cada cuánto subirías un video del servidor?",
+    tipo_videos: "¿Qué tipo de TikToks harías?",
+    ip_visible: "¿IP/nombre del server visible en tus videos?",
+    shaders_packs: "¿Usas Shaders o Texture Packs llamativos?",
+    promedio_vistas: "Promedio de vistas en últimos 5 TikToks de MC",
+    metas: "Metas principales para tu canal en los próximos meses",
+    por_que_server: "¿Por qué elegiste este servidor para crear contenido?",
+    constancia: "Compromiso de constancia (frecuencia)",
+    vibra: "¿Qué vibra le quieres dar a tu contenido en el server?",
+    tiempo_minecraft: "Tiempo jugando Minecraft y tipo de contenido habitual",
+    sanciones_previas: "¿Has sido sancionado/baneado por toxicidad antes?",
+    acepta_normas: "Acepta las normas del servidor y de creadores",
   },
 };
 
@@ -121,10 +144,10 @@ const Admin = () => {
   const ticketMsgEndRef = useRef<HTMLDivElement>(null);
 
   // Staff applications state
-  const [formSettings, setFormSettings] = useState<{ minecraft: boolean; discord: boolean }>({ minecraft: false, discord: false });
+  const [formSettings, setFormSettings] = useState<{ minecraft: boolean; discord: boolean; creador: boolean }>({ minecraft: false, discord: false, creador: false });
   const [applications, setApplications] = useState<any[]>([]);
-  const [appFilter, setAppFilter] = useState<"all" | "pending" | "reviewed">("all");
-  const [appTypeFilter, setAppTypeFilter] = useState<"all" | "minecraft" | "discord">("all");
+  const [appFilter, setAppFilter] = useState<"all" | "pending" | "reviewed" | "accepted" | "rejected">("all");
+  const [appTypeFilter, setAppTypeFilter] = useState<"all" | "minecraft" | "discord" | "creador">("all");
   const [selectedApp, setSelectedApp] = useState<any | null>(null);
   const [togglingForm, setTogglingForm] = useState<string | null>(null);
 
@@ -157,7 +180,8 @@ const Admin = () => {
       if (fsRes.data) {
         const mc = fsRes.data.find((s: any) => s.form_type === "minecraft");
         const dc = fsRes.data.find((s: any) => s.form_type === "discord");
-        setFormSettings({ minecraft: mc?.is_active ?? false, discord: dc?.is_active ?? false });
+        const cr = fsRes.data.find((s: any) => s.form_type === "creador");
+        setFormSettings({ minecraft: mc?.is_active ?? false, discord: dc?.is_active ?? false, creador: cr?.is_active ?? false });
       }
       if (apRes.data) setApplications(apRes.data);
       if (tRes.data) {
@@ -411,19 +435,19 @@ const Admin = () => {
   };
 
   // Form toggle handler
-  const toggleForm = async (formType: "minecraft" | "discord") => {
+  const FORM_LABELS: Record<string, string> = { minecraft: "Minecraft", discord: "Discord", creador: "Creador de Contenido" };
+  const toggleForm = async (formType: "minecraft" | "discord" | "creador") => {
     setTogglingForm(formType);
     const newValue = !formSettings[formType];
     const { error } = await supabase.from("form_settings").update({ is_active: newValue, updated_at: new Date().toISOString() }).eq("form_type", formType);
     if (!error) {
       setFormSettings((prev) => ({ ...prev, [formType]: newValue }));
       if (!newValue) {
-        // When disabling, delete all applications of that type
         await supabase.from("staff_applications").delete().eq("form_type", formType);
         setApplications((prev) => prev.filter((a) => a.form_type !== formType));
-        toast.success(`Formulario ${formType === "minecraft" ? "Minecraft" : "Discord"} desactivado. Solicitudes eliminadas.`);
+        toast.success(`Formulario ${FORM_LABELS[formType]} desactivado. Solicitudes eliminadas.`);
       } else {
-        toast.success(`Formulario ${formType === "minecraft" ? "Minecraft" : "Discord"} activado.`);
+        toast.success(`Formulario ${FORM_LABELS[formType]} activado.`);
       }
     }
     setTogglingForm(null);
@@ -440,7 +464,7 @@ const Admin = () => {
 
   const acceptApplication = async (appId: string) => {
     const t = toast.loading("Aceptando postulante y enviando DM...");
-    const { data, error } = await supabase.functions.invoke("accept-application", { body: { appId } });
+    const { data, error } = await supabase.functions.invoke("accept-application", { body: { appId, action: "accept" } });
     toast.dismiss(t);
     if (error || (data as any)?.error) {
       toast.error((data as any)?.error || error?.message || "Error al aceptar");
@@ -449,6 +473,19 @@ const Admin = () => {
     setApplications((prev) => prev.map((a) => a.id === appId ? { ...a, status: "accepted" } : a));
     if (selectedApp?.id === appId) setSelectedApp((prev: any) => prev ? { ...prev, status: "accepted" } : prev);
     toast.success("¡Postulante aceptado! Rol asignado y DM enviado.");
+  };
+
+  const rejectApplication = async (appId: string) => {
+    const t = toast.loading("Rechazando postulante y enviando DM...");
+    const { data, error } = await supabase.functions.invoke("accept-application", { body: { appId, action: "reject" } });
+    toast.dismiss(t);
+    if (error || (data as any)?.error) {
+      toast.error((data as any)?.error || error?.message || "Error al rechazar");
+      return;
+    }
+    setApplications((prev) => prev.map((a) => a.id === appId ? { ...a, status: "rejected" } : a));
+    if (selectedApp?.id === appId) setSelectedApp((prev: any) => prev ? { ...prev, status: "rejected" } : prev);
+    toast.success("Postulante rechazado. DM enviado.");
   };
 
   const deleteApplication = async (appId: string) => {
@@ -460,6 +497,17 @@ const Admin = () => {
     }
   };
 
+  const CREATOR_TYPE_LABELS: Record<string, string> = { youtuber: "YouTuber", streamer: "Streamer", tiktoker: "TikToker", media: "Media" };
+  const getAppTypeBadge = (a: any) => {
+    if (a.form_type === "creador") {
+      const ct = (a.answers as any)?.creator_type;
+      return `Creador · ${CREATOR_TYPE_LABELS[ct] || "?"}`;
+    }
+    if (a.form_type === "minecraft") return "Minecraft";
+    if (a.form_type === "discord") return "Discord";
+    return a.form_type;
+  };
+
   const filteredApps = applications.filter((a) => {
     const matchStatus = appFilter === "all" || a.status === appFilter;
     const matchType = appTypeFilter === "all" || a.form_type === appTypeFilter;
@@ -468,6 +516,7 @@ const Admin = () => {
 
   const mcAppsCount = applications.filter((a) => a.form_type === "minecraft").length;
   const dcAppsCount = applications.filter((a) => a.form_type === "discord").length;
+  const crAppsCount = applications.filter((a) => a.form_type === "creador").length;
   const pendingAppsCount = applications.filter((a) => a.status === "pending").length;
 
   const tabs = [
@@ -945,58 +994,51 @@ const Admin = () => {
         {activeTab === "applications" && (
           <div className="space-y-6">
             {/* Toggle switches */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {(["minecraft", "discord"] as const).map((type) => (
-                <div key={type} className="card-medieval p-5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      {type === "minecraft" ? <Gamepad2 className="text-primary" size={24} /> : <MessageCircle className="text-accent" size={24} />}
-                      <div>
-                        <h3 className="font-heading font-bold text-sm">Formulario {type === "minecraft" ? "Minecraft ⛏️" : "Discord 💬"}</h3>
-                        <p className="text-xs text-muted-foreground font-body">{formSettings[type] ? "Abierto para todos" : "Cerrado — no visible para nadie"}</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {(["minecraft", "discord", "creador"] as const).map((type) => {
+                const Icon = type === "minecraft" ? Gamepad2 : type === "discord" ? MessageCircle : Video;
+                const iconColor = type === "minecraft" ? "text-primary" : type === "discord" ? "text-accent" : "text-secondary";
+                const labelEmoji = type === "minecraft" ? "Minecraft ⛏️" : type === "discord" ? "Discord 💬" : "Creador 🎬";
+                return (
+                  <div key={type} className="card-medieval p-5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Icon className={iconColor} size={24} />
+                        <div>
+                          <h3 className="font-heading font-bold text-sm">Formulario {labelEmoji}</h3>
+                          <p className="text-xs text-muted-foreground font-body">{formSettings[type] ? "Abierto para todos" : "Cerrado — no visible"}</p>
+                        </div>
                       </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" checked={formSettings[type]} onChange={() => toggleForm(type)} disabled={togglingForm === type} className="sr-only peer" />
+                        <div className="peer ring-0 bg-destructive/60 rounded-full duration-300 after:duration-300 w-12 h-6 peer-checked:bg-secondary after:content-[''] after:rounded-full after:absolute after:bg-background after:h-5 after:w-5 after:top-0.5 after:left-0.5 peer-checked:after:translate-x-6" />
+                      </label>
                     </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={formSettings[type]}
-                        onChange={() => toggleForm(type)}
-                        disabled={togglingForm === type}
-                        className="sr-only peer"
-                      />
-                      <div className="group peer ring-0 bg-destructive/60 rounded-full outline-none duration-300 after:duration-300 w-16 h-8 shadow-md peer-checked:bg-secondary peer-focus:outline-none after:content-[''] after:rounded-full after:absolute after:bg-background after:outline-none after:h-6 after:w-6 after:top-1 after:left-1 after:flex after:justify-center after:items-center peer-checked:after:translate-x-8 peer-hover:after:scale-95">
-                        <svg className="absolute top-1 left-8 stroke-foreground w-6 h-6" height="100" preserveAspectRatio="xMidYMid meet" viewBox="0 0 100 100" width="100" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M50,18A19.9,19.9,0,0,0,30,38v8a8,8,0,0,0-8,8V74a8,8,0,0,0,8,8H70a8,8,0,0,0,8-8V54a8,8,0,0,0-8-8H38V38a12,12,0,0,1,23.6-3,4,4,0,1,0,7.8-2A20.1,20.1,0,0,0,50,18Z" />
-                        </svg>
-                        <svg className="absolute top-1 left-1 stroke-foreground w-6 h-6" height="100" preserveAspectRatio="xMidYMid meet" viewBox="0 0 100 100" width="100" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M30,46V38a20,20,0,0,1,40,0v8a8,8,0,0,1,8,8V74a8,8,0,0,1-8,8H30a8,8,0,0,1-8-8V54A8,8,0,0,1,30,46Zm32-8v8H38V38a12,12,0,0,1,24,0Z" fillRule="evenodd" />
-                        </svg>
-                      </div>
-                    </label>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Analytics cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <StatCard icon={ClipboardList} value={applications.length} label="Solicitudes Totales" />
-              <StatCard icon={Gamepad2} value={mcAppsCount} label="De Minecraft" color="text-primary" />
-              <StatCard icon={MessageCircle} value={dcAppsCount} label="De Discord" color="text-accent" />
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <StatCard icon={ClipboardList} value={applications.length} label="Totales" />
+              <StatCard icon={Gamepad2} value={mcAppsCount} label="Minecraft" color="text-primary" />
+              <StatCard icon={MessageCircle} value={dcAppsCount} label="Discord" color="text-accent" />
+              <StatCard icon={Video} value={crAppsCount} label="Creadores" color="text-secondary" />
               <StatCard icon={Clock} value={pendingAppsCount} label="Sin Revisar" color="text-destructive" />
             </div>
 
             {/* Filters */}
             <div className="flex flex-wrap gap-2">
-              {(["all", "pending", "reviewed"] as const).map((f) => (
+              {(["all", "pending", "reviewed", "accepted", "rejected"] as const).map((f) => (
                 <button key={f} onClick={() => setAppFilter(f)} className={`px-4 py-2 rounded-lg font-heading font-bold text-xs transition border-2 ${appFilter === f ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border text-muted-foreground hover:border-primary/50"}`}>
-                  {f === "all" ? "Ver Todos" : f === "pending" ? "Sin Revisar" : "Ya Revisados"}
+                  {f === "all" ? "Todos los estados" : f === "pending" ? "Pendiente" : f === "reviewed" ? "Revisado" : f === "accepted" ? "Aceptado" : "Rechazado"}
                 </button>
               ))}
               <div className="w-px bg-border mx-1" />
-              {(["all", "minecraft", "discord"] as const).map((f) => (
+              {(["all", "minecraft", "discord", "creador"] as const).map((f) => (
                 <button key={f} onClick={() => setAppTypeFilter(f)} className={`px-4 py-2 rounded-lg font-heading font-bold text-xs transition border-2 ${appTypeFilter === f ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border text-muted-foreground hover:border-primary/50"}`}>
-                  {f === "all" ? "Todos" : f === "minecraft" ? "Minecraft" : "Discord"}
+                  {f === "all" ? "Todos los tipos" : f === "minecraft" ? "Minecraft" : f === "discord" ? "Discord" : "Creadores"}
                 </button>
               ))}
             </div>
@@ -1005,7 +1047,7 @@ const Admin = () => {
             {selectedApp ? (
               <div className="card-medieval p-6">
                 <button onClick={() => setSelectedApp(null)} className="text-sm text-muted-foreground font-body hover:text-foreground transition mb-4 block">← Volver a lista</button>
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                   <div className="flex items-center gap-3">
                     <img src={selectedApp.user_avatar || "/placeholder.svg"} alt="" className="w-12 h-12 rounded-full border-2 border-border" />
                     <div>
@@ -1013,12 +1055,21 @@ const Admin = () => {
                       <p className="text-xs text-muted-foreground font-body">{selectedApp.user_email}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`px-3 py-1 rounded-full text-xs font-heading font-bold ${selectedApp.status === "pending" ? "bg-primary/20 text-primary" : "bg-secondary/20 text-secondary"}`}>
-                      {selectedApp.status === "pending" ? "Pendiente" : "Revisado"}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`px-3 py-1 rounded-full text-xs font-heading font-bold ${
+                      selectedApp.status === "accepted" ? "bg-secondary/20 text-secondary" :
+                      selectedApp.status === "rejected" ? "bg-destructive/20 text-destructive" :
+                      selectedApp.status === "reviewed" ? "bg-accent/20 text-accent" :
+                      "bg-primary/20 text-primary"
+                    }`}>
+                      {selectedApp.status === "accepted" ? "Aceptado" : selectedApp.status === "rejected" ? "Rechazado" : selectedApp.status === "reviewed" ? "Revisado" : "Pendiente"}
                     </span>
-                    <span className={`px-3 py-1 rounded-full text-xs font-heading font-bold ${selectedApp.form_type === "minecraft" ? "bg-primary/10 text-primary" : "bg-accent/10 text-accent"}`}>
-                      {selectedApp.form_type === "minecraft" ? "Minecraft" : "Discord"}
+                    <span className={`px-3 py-1 rounded-full text-xs font-heading font-bold ${
+                      selectedApp.form_type === "minecraft" ? "bg-primary/10 text-primary" :
+                      selectedApp.form_type === "discord" ? "bg-accent/10 text-accent" :
+                      "bg-secondary/10 text-secondary"
+                    }`}>
+                      {getAppTypeBadge(selectedApp)}
                     </span>
                   </div>
                 </div>
@@ -1029,10 +1080,11 @@ const Admin = () => {
                 <div className="space-y-4">
                   {Object.entries(selectedApp.answers || {}).map(([key, value]) => {
                     const questionLabel = QUESTION_LABELS[selectedApp.form_type]?.[key] || key;
+                    const displayValue = typeof value === "boolean" ? (value ? "Sí (aceptado)" : "No") : String(value);
                     return (
                       <div key={key} className="p-4 bg-muted/30 rounded-lg border border-border/50">
                         <p className="text-xs font-heading font-bold text-primary mb-2">📋 {questionLabel}</p>
-                        <p className="font-body text-sm text-foreground/90 whitespace-pre-wrap">{String(value)}</p>
+                        <p className="font-body text-sm text-foreground/90 whitespace-pre-wrap">{displayValue}</p>
                       </div>
                     );
                   })}
@@ -1044,12 +1096,17 @@ const Admin = () => {
                       <CheckCircle2 size={16} /> Aceptar (DM + Rol)
                     </button>
                   )}
+                  {selectedApp.status !== "rejected" && (
+                    <button onClick={() => rejectApplication(selectedApp.id)} className="flex items-center gap-2 px-4 py-2 bg-destructive text-destructive-foreground rounded-lg font-heading font-bold text-sm hover:opacity-90 transition">
+                      <XCircle size={16} /> Rechazar (DM)
+                    </button>
+                  )}
                   {selectedApp.status === "pending" && (
-                    <button onClick={() => markAsReviewed(selectedApp.id)} className="flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-lg font-heading font-bold text-sm hover:opacity-90 transition">
+                    <button onClick={() => markAsReviewed(selectedApp.id)} className="flex items-center gap-2 px-4 py-2 bg-accent text-accent-foreground rounded-lg font-heading font-bold text-sm hover:opacity-90 transition">
                       <CheckCircle2 size={16} /> Marcar como Revisado
                     </button>
                   )}
-                  <button onClick={() => deleteApplication(selectedApp.id)} className="flex items-center gap-2 px-4 py-2 bg-destructive text-destructive-foreground rounded-lg font-heading font-bold text-sm hover:opacity-90 transition">
+                  <button onClick={() => deleteApplication(selectedApp.id)} className="flex items-center gap-2 px-4 py-2 bg-muted text-muted-foreground rounded-lg font-heading font-bold text-sm hover:bg-muted/80 transition">
                     <Trash2 size={16} /> Eliminar
                   </button>
                 </div>
@@ -1066,12 +1123,21 @@ const Admin = () => {
                           <p className="text-xs text-muted-foreground font-body">{app.user_email}</p>
                         </div>
                       </div>
-                      <div className="text-right flex items-center gap-2">
-                        <span className={`px-2 py-1 rounded-full text-[10px] font-heading font-bold ${app.form_type === "minecraft" ? "bg-primary/10 text-primary" : "bg-accent/10 text-accent"}`}>
-                          {app.form_type === "minecraft" ? "MC" : "DC"}
+                      <div className="text-right flex items-center gap-2 flex-wrap">
+                        <span className={`px-2 py-1 rounded-full text-[10px] font-heading font-bold ${
+                          app.form_type === "minecraft" ? "bg-primary/10 text-primary" :
+                          app.form_type === "discord" ? "bg-accent/10 text-accent" :
+                          "bg-secondary/10 text-secondary"
+                        }`}>
+                          {getAppTypeBadge(app)}
                         </span>
-                        <span className={`px-2 py-1 rounded-full text-[10px] font-heading font-bold ${app.status === "pending" ? "bg-primary/20 text-primary" : "bg-secondary/20 text-secondary"}`}>
-                          {app.status === "pending" ? "Pendiente" : "Revisado"}
+                        <span className={`px-2 py-1 rounded-full text-[10px] font-heading font-bold ${
+                          app.status === "accepted" ? "bg-secondary/20 text-secondary" :
+                          app.status === "rejected" ? "bg-destructive/20 text-destructive" :
+                          app.status === "reviewed" ? "bg-accent/20 text-accent" :
+                          "bg-primary/20 text-primary"
+                        }`}>
+                          {app.status === "accepted" ? "Aceptado" : app.status === "rejected" ? "Rechazado" : app.status === "reviewed" ? "Revisado" : "Pendiente"}
                         </span>
                       </div>
                     </div>

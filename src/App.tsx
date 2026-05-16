@@ -14,6 +14,7 @@ import Login from "./pages/Login";
 import Staff from "./pages/Staff";
 import Tickets from "./pages/Tickets";
 import Aplicaciones from "./pages/Aplicaciones";
+import Wiki from "./pages/Wiki";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,8 @@ const App = () => (
             <Route path="/staff" element={<Staff />} />
             <Route path="/tickets" element={<Tickets />} />
             <Route path="/aplicaciones" element={<Aplicaciones />} />
+            <Route path="/wiki" element={<Wiki />} />
+            <Route path="/wiki/:slug" element={<Wiki />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
