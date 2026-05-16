@@ -3,16 +3,24 @@ import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import AnimatedSection from "@/components/AnimatedSection";
 import { supabase } from "@/integrations/supabase/client";
-
 import { useAuth } from "@/hooks/useAuth";
-import { motion, AnimatePresence } from "framer-motion";
-import { Shield, Gamepad2, MessageCircle, Send, CheckCircle2, LogIn, Lock } from "lucide-react";
+import { motion } from "framer-motion";
+import { Gamepad2, MessageCircle, Video, Send, CheckCircle2, Lock, Twitch, Youtube, Music2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/solvianmc.png";
 
-type FormType = "minecraft" | "discord";
+type FormType = "minecraft" | "discord" | "creador";
+type CreatorType = "streamer" | "youtuber" | "tiktoker" | "media";
 
-const MINECRAFT_QUESTIONS = [
+type Question = {
+  id: string;
+  label: string;
+  type: "text" | "textarea" | "radio" | "url" | "number" | "checkbox";
+  required: boolean;
+  options?: string[];
+};
+
+const MINECRAFT_QUESTIONS: Question[] = [
   { id: "mc_nick", label: "¿Cuál es tu nick de Minecraft? (Ejemplo: SoyNulled)", type: "text", required: true },
   { id: "dc_nick", label: "¿Cuál es tu nick de Discord? (Ejemplo: soynulled)", type: "text", required: true },
   { id: "premium", label: "¿Eres premium o no premium?", type: "radio", required: true, options: ["Premium", "No premium"] },
@@ -33,7 +41,7 @@ const MINECRAFT_QUESTIONS = [
   { id: "ideas", label: "¿Qué ideas tienes para mejorar SolvianMC?", type: "textarea", required: false },
 ];
 
-const DISCORD_QUESTIONS = [
+const DISCORD_QUESTIONS: Question[] = [
   { id: "dc_nick", label: "¿Cuál es tu nick de Discord? (Ejemplo: soynulled)", type: "text", required: true },
   { id: "dc_id", label: "¿Cuál es tu ID de Discord?", type: "text", required: true },
   { id: "edad", label: "¿Cuántos años tienes?", type: "text", required: true },
@@ -49,12 +57,58 @@ const DISCORD_QUESTIONS = [
   { id: "tiempo", label: "¿Cuánto tiempo puedes dedicar semanalmente al Discord?", type: "text", required: false },
 ];
 
+const CREATOR_TYPES: { id: CreatorType; label: string; description: string; icon: any }[] = [
+  { id: "streamer", label: "Streamer (Twitch / Kick)", description: "Haces directos jugando Minecraft", icon: Twitch },
+  { id: "youtuber", label: "YouTuber", description: "Creas videos para YouTube", icon: Youtube },
+  { id: "tiktoker", label: "TikToker", description: "Creas clips cortos para TikTok", icon: Music2 },
+  { id: "media", label: "Media (Creadores pequeños / En crecimiento)", description: "Estás creciendo en cualquier plataforma", icon: Sparkles },
+];
+
+const CREATOR_QUESTIONS: Record<CreatorType, Question[]> = {
+  streamer: [
+    { id: "canal", label: "Enlace a tu canal", type: "url", required: true },
+    { id: "viewers", label: "¿Cuál es tu media de viewers cuando streameas Minecraft?", type: "number", required: true },
+    { id: "entretener", label: "El rol en Minecraft a veces implica farmear o construir. ¿Cómo mantienes a tu chat entretenido durante esos momentos más \"lentos\"?", type: "textarea", required: true },
+    { id: "shaders", label: "¿Tu PC soporta jugar con Shaders en directo para que el stream tenga buena calidad visual?", type: "radio", required: true, options: ["Sí", "No"] },
+    { id: "lore_o_desmadre", label: "¿Qué prefieres en directo: enfocarte en desarrollar la historia de tu personaje (Lore) o interactuar y hacer desmadre con otros usuarios?", type: "textarea", required: true },
+  ],
+  youtuber: [
+    { id: "canal", label: "Enlace a tu canal", type: "url", required: true },
+    { id: "tipo_contenido", label: "Para tu contenido en el server, ¿planeas hacer una serie episódica (tipo película/historia) o videos de momentos divertidos/clips?", type: "textarea", required: true },
+    { id: "replay_mod", label: "¿Sabes utilizar el Replay Mod o herramientas de cámara libre para grabar cinemáticas de Minecraft?", type: "radio", required: true, options: ["Sí", "No", "Estoy aprendiendo"] },
+    { id: "video_orgulloso", label: "Deja el link del video de Minecraft del que te sientas más orgulloso (por edición, historia o vistas)", type: "url", required: true },
+    { id: "frecuencia", label: "¿Cada cuánto subirías un video del servidor?", type: "text", required: true },
+  ],
+  tiktoker: [
+    { id: "canal", label: "Enlace a tu cuenta de TikTok", type: "url", required: true },
+    { id: "tipo_videos", label: "El contenido de Minecraft en TikTok tiene que ser rápido. ¿Qué tipo de videos harías? (ej. Resumen del Lore, momentos graciosos, tours de construcciones)", type: "textarea", required: true },
+    { id: "ip_visible", label: "¿Tus videos suelen tener la IP o el nombre del servidor visible para ayudar a traer gente nueva?", type: "radio", required: true, options: ["Sí", "No"] },
+    { id: "shaders_packs", label: "¿Usas Shaders o Texture Packs llamativos para grabar tus clips?", type: "radio", required: true, options: ["Sí", "No"] },
+    { id: "promedio_vistas", label: "¿Cuál es el promedio de vistas de tus últimos 5 TikToks de Minecraft?", type: "number", required: true },
+  ],
+  media: [
+    { id: "canal", label: "Enlace a tu canal principal (YouTube, Twitch, TikTok, etc.)", type: "url", required: true },
+    { id: "metas", label: "Sabemos que estás en crecimiento. ¿Cuáles son tus metas principales para tu canal en los próximos meses?", type: "textarea", required: true },
+    { id: "por_que_server", label: "¿Por qué elegiste este servidor en específico para crear contenido y crecer tu comunidad?", type: "textarea", required: true },
+    { id: "constancia", label: "Para crecer, la constancia es clave. ¿Cada cuánto tiempo te comprometes a subir un video o hacer directo jugando en el servidor?", type: "text", required: true },
+    { id: "video_orgulloso", label: "Deja el link del video o clip de Minecraft del que más te sientas orgulloso hasta ahora (no importa las vistas, nos interesa ver las ganas y la calidad)", type: "url", required: true },
+    { id: "vibra", label: "¿Qué tipo de vibra le quieres dar a tu contenido en el server? (Ej. Historias serias de tu personaje, series con amigos, construir y farmear, etc.)", type: "textarea", required: true },
+  ],
+};
+
+const CREATOR_COMMON_QUESTIONS: Question[] = [
+  { id: "tiempo_minecraft", label: "¿Cuánto tiempo llevas jugando Minecraft y qué tipo de contenido sueles hacer?", type: "textarea", required: true },
+  { id: "sanciones_previas", label: "¿Has sido sancionado o baneado por toxicidad en otros servidores de la comunidad? Si es así, explica brevemente qué pasó.", type: "textarea", required: true },
+  { id: "acepta_normas", label: "¿Entiendes que el rango de Creador/Media no te exime de cumplir las normas del servidor y que hacer hate o problemas en tus redes hacia el servidor causará la baja inmediata de tu rango?", type: "checkbox", required: true },
+];
+
 const Aplicaciones = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const [formSettings, setFormSettings] = useState<{ minecraft: boolean; discord: boolean }>({ minecraft: false, discord: false });
+  const [formSettings, setFormSettings] = useState<{ minecraft: boolean; discord: boolean; creador: boolean }>({ minecraft: false, discord: false, creador: false });
   const [selectedForm, setSelectedForm] = useState<FormType | null>(null);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [creatorType, setCreatorType] = useState<CreatorType | null>(null);
+  const [answers, setAnswers] = useState<Record<string, string | boolean>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [loadingSettings, setLoadingSettings] = useState(true);
@@ -66,7 +120,8 @@ const Aplicaciones = () => {
       if (data) {
         const mc = data.find((s: any) => s.form_type === "minecraft");
         const dc = data.find((s: any) => s.form_type === "discord");
-        setFormSettings({ minecraft: mc?.is_active ?? false, discord: dc?.is_active ?? false });
+        const cr = data.find((s: any) => s.form_type === "creador");
+        setFormSettings({ minecraft: mc?.is_active ?? false, discord: dc?.is_active ?? false, creador: cr?.is_active ?? false });
       }
       setLoadingSettings(false);
     };
@@ -80,24 +135,39 @@ const Aplicaciones = () => {
     window.location.href = `${supabaseUrl}/functions/v1/discord-auth?action=start&final=${encodeURIComponent(final)}`;
   };
 
-  const questions = selectedForm === "minecraft" ? MINECRAFT_QUESTIONS : DISCORD_QUESTIONS;
+  const getQuestions = (): Question[] => {
+    if (selectedForm === "minecraft") return MINECRAFT_QUESTIONS;
+    if (selectedForm === "discord") return DISCORD_QUESTIONS;
+    if (selectedForm === "creador" && creatorType) {
+      return [...CREATOR_QUESTIONS[creatorType], ...CREATOR_COMMON_QUESTIONS];
+    }
+    return [];
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !selectedForm || submitting) return;
+    const questions = getQuestions();
 
-    // Validate required
-    const missing = questions.filter((q) => q.required && !answers[q.id]?.trim());
+    const missing = questions.filter((q) => {
+      if (!q.required) return false;
+      const v = answers[q.id];
+      if (q.type === "checkbox") return v !== true;
+      return !v || (typeof v === "string" && !v.trim());
+    });
     if (missing.length > 0) {
       toast.error("Por favor, completa todas las preguntas obligatorias.");
       return;
     }
 
     setSubmitting(true);
+    const finalAnswers: Record<string, any> = { ...answers };
+    if (selectedForm === "creador") finalAnswers.creator_type = creatorType;
+
     const { error } = await supabase.from("staff_applications").insert({
       user_id: user.id,
       form_type: selectedForm,
-      answers,
+      answers: finalAnswers,
       user_email: user.email,
       user_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split("@")[0],
       user_avatar: user.user_metadata?.avatar_url || user.user_metadata?.picture,
@@ -123,7 +193,7 @@ const Aplicaciones = () => {
     );
   }
 
-  const noFormsActive = !formSettings.minecraft && !formSettings.discord;
+  const noFormsActive = !formSettings.minecraft && !formSettings.discord && !formSettings.creador;
 
   if (noFormsActive) {
     return (
@@ -132,7 +202,7 @@ const Aplicaciones = () => {
           <Lock className="mx-auto text-muted-foreground mb-4" size={48} />
           <h1 className="font-heading text-2xl font-bold mb-2">Formularios Cerrados</h1>
           <p className="text-muted-foreground font-body">
-            En este momento no estamos aceptando solicitudes de staff. ¡Vuelve pronto!
+            En este momento no estamos aceptando solicitudes. ¡Vuelve pronto!
           </p>
         </AnimatedSection>
       </Layout>
@@ -159,54 +229,39 @@ const Aplicaciones = () => {
     );
   }
 
-  // If no form selected, show selector
+  // No form selected — show selector
   if (!selectedForm) {
     return (
       <Layout>
-        <AnimatedSection className="container mx-auto px-4 py-16 max-w-3xl">
+        <AnimatedSection className="container mx-auto px-4 py-16 max-w-5xl">
           <div className="text-center mb-10">
             <img src={logo} alt="SolvianMC" className="w-16 h-16 rounded-full mx-auto mb-3 border-2 border-primary" />
-            <h1 className="font-heading text-3xl font-bold text-gradient-gold mb-2">Staff Applys</h1>
+            <h1 className="font-heading text-3xl font-bold text-gradient-gold mb-2">Postulaciones</h1>
             <p className="text-muted-foreground font-body">
-              SolvianMC Network está buscando staffs. ¡Selecciona el formulario que deseas completar!
+              Selecciona el formulario que deseas completar.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {formSettings.minecraft && (
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setSelectedForm("minecraft")}
-                className="card-medieval p-8 text-left hover:border-primary/50 transition-all group"
-              >
+              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setSelectedForm("minecraft")} className="card-medieval p-8 text-left hover:border-primary/50 transition-all">
                 <Gamepad2 className="text-primary mb-3" size={32} />
-                <h2 className="font-heading text-xl font-bold mb-2">Minecraft</h2>
-                <p className="text-muted-foreground font-body text-sm mb-4">
-                  Aplica para ser staff dentro del servidor de Minecraft.
-                </p>
-                <div className="text-xs text-muted-foreground font-body space-y-1">
-                  <p>🛡️ <strong>Rangos:</strong> Helper, Trial Mod, Moderador</p>
-                  <p>📋 <strong>Requisitos:</strong> +14 años, micrófono, sin sanciones recientes</p>
-                </div>
+                <h2 className="font-heading text-xl font-bold mb-2">Moderador Minecraft</h2>
+                <p className="text-muted-foreground font-body text-sm">Aplica para ser staff dentro del servidor.</p>
               </motion.button>
             )}
-
             {formSettings.discord && (
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setSelectedForm("discord")}
-                className="card-medieval p-8 text-left hover:border-primary/50 transition-all group"
-              >
+              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setSelectedForm("discord")} className="card-medieval p-8 text-left hover:border-primary/50 transition-all">
                 <MessageCircle className="text-accent mb-3" size={32} />
-                <h2 className="font-heading text-xl font-bold mb-2">Discord</h2>
-                <p className="text-muted-foreground font-body text-sm mb-4">
-                  Aplica para ser staff en el servidor de Discord.
-                </p>
-                <div className="text-xs text-muted-foreground font-body space-y-1">
-                  <p>📋 <strong>Requisitos:</strong> +13 años, micrófono obligatorio, sin sanciones</p>
-                </div>
+                <h2 className="font-heading text-xl font-bold mb-2">Moderador Discord</h2>
+                <p className="text-muted-foreground font-body text-sm">Aplica para ser staff en el Discord.</p>
+              </motion.button>
+            )}
+            {formSettings.creador && (
+              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setSelectedForm("creador")} className="card-medieval p-8 text-left hover:border-primary/50 transition-all">
+                <Video className="text-secondary mb-3" size={32} />
+                <h2 className="font-heading text-xl font-bold mb-2">Creador de Contenido</h2>
+                <p className="text-muted-foreground font-body text-sm">Streamers, YouTubers, TikTokers y creadores en crecimiento.</p>
               </motion.button>
             )}
           </div>
@@ -215,7 +270,7 @@ const Aplicaciones = () => {
     );
   }
 
-  // Force Discord login (even if logged in via Google)
+  // Force Discord login
   const hasDiscord = !!(user?.user_metadata?.discord_id);
   if (!user || !hasDiscord) {
     return (
@@ -226,18 +281,11 @@ const Aplicaciones = () => {
           <p className="text-muted-foreground font-body mb-6">
             {user ? "Necesitas vincular tu cuenta de Discord para enviar tu solicitud." : "Necesitas iniciar sesión con Discord para enviar tu solicitud."}
           </p>
-          <button
-            onClick={handleDiscordSignIn}
-            disabled={signingIn}
-            className="w-full py-3 bg-[#5865F2] text-white border-2 border-[#5865F2] rounded-lg font-heading font-bold flex items-center justify-center gap-3 hover:opacity-90 transition-all disabled:opacity-50"
-          >
+          <button onClick={handleDiscordSignIn} disabled={signingIn} className="w-full py-3 bg-[#5865F2] text-white border-2 border-[#5865F2] rounded-lg font-heading font-bold flex items-center justify-center gap-3 hover:opacity-90 transition-all disabled:opacity-50">
             {signingIn ? (
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
             ) : (
-              <>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
-                Continuar con Discord
-              </>
+              "Continuar con Discord"
             )}
           </button>
         </AnimatedSection>
@@ -245,93 +293,90 @@ const Aplicaciones = () => {
     );
   }
 
+  // Creator type selector
+  if (selectedForm === "creador" && !creatorType) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-8 max-w-3xl">
+          <AnimatedSection>
+            <button onClick={() => { setSelectedForm(null); setAnswers({}); }} className="text-sm text-muted-foreground font-body hover:text-foreground transition mb-4">
+              ← Volver a selección
+            </button>
+            <div className="text-center mb-8">
+              <Video className="text-secondary mx-auto mb-3" size={40} />
+              <h1 className="font-heading text-2xl font-bold mb-2">¿Qué tipo de creador eres?</h1>
+              <p className="text-muted-foreground font-body text-sm">Elige el que mejor describa tu contenido para personalizar el formulario.</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {CREATOR_TYPES.map((t) => {
+                const Icon = t.icon;
+                return (
+                  <motion.button key={t.id} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setCreatorType(t.id)} className="card-medieval p-5 text-left hover:border-primary/50 transition-all flex items-start gap-3">
+                    <Icon className="text-primary shrink-0 mt-1" size={28} />
+                    <div>
+                      <h3 className="font-heading font-bold text-base mb-1">{t.label}</h3>
+                      <p className="text-muted-foreground font-body text-xs">{t.description}</p>
+                    </div>
+                  </motion.button>
+                );
+              })}
+            </div>
+          </AnimatedSection>
+        </div>
+      </Layout>
+    );
+  }
+
   // Form view
-  const formTitle = selectedForm === "minecraft" ? "Staff Applys SolvianMC (Minecraft)" : "Staff Applys SolvianMC (Discord)";
-  const formDescription = selectedForm === "minecraft"
-    ? "SolvianMC Network está buscando staffs, no hace falta tener experiencia previa."
-    : "SolvianMC Network está buscando staffs, no hace falta tener experiencia previa.";
+  const questions = getQuestions();
+  const formTitle =
+    selectedForm === "minecraft" ? "Staff Applys (Minecraft)" :
+    selectedForm === "discord" ? "Staff Applys (Discord)" :
+    `Creador de Contenido — ${CREATOR_TYPES.find((c) => c.id === creatorType)?.label}`;
 
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8 max-w-2xl">
         <AnimatedSection>
-          {/* Header */}
           <div className="card-medieval p-6 mb-6">
-            <button onClick={() => { setSelectedForm(null); setAnswers({}); }} className="text-sm text-muted-foreground font-body hover:text-foreground transition mb-4 block">
-              ← Volver a selección
+            <button onClick={() => { if (selectedForm === "creador" && creatorType) { setCreatorType(null); setAnswers({}); } else { setSelectedForm(null); setCreatorType(null); setAnswers({}); } }} className="text-sm text-muted-foreground font-body hover:text-foreground transition mb-4 block">
+              ← Volver
             </button>
-            <div className="flex items-center gap-3 mb-3">
-              {selectedForm === "minecraft" ? <Gamepad2 className="text-primary" size={28} /> : <MessageCircle className="text-accent" size={28} />}
-              <h1 className="font-heading text-xl font-bold">{formTitle}</h1>
-            </div>
-            <p className="text-muted-foreground font-body text-sm mb-4">{formDescription}</p>
+            <h1 className="font-heading text-xl font-bold mb-3">{formTitle}</h1>
 
-            {/* User info */}
             <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-              <img
-                src={user.user_metadata?.avatar_url || user.user_metadata?.picture || "/placeholder.svg"}
-                alt=""
-                className="w-10 h-10 rounded-full border border-border"
-              />
+              <img src={user.user_metadata?.avatar_url || user.user_metadata?.picture || "/placeholder.svg"} alt="" className="w-10 h-10 rounded-full border border-border" />
               <div>
                 <p className="font-heading font-bold text-sm">{user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split("@")[0]}</p>
                 <p className="text-xs text-muted-foreground font-body">{user.email}</p>
               </div>
             </div>
-
-            {selectedForm === "minecraft" && (
-              <div className="mt-4 p-3 bg-primary/10 rounded-lg border border-primary/20">
-                <p className="text-sm font-heading font-semibold mb-1">🛡️ Rangos disponibles:</p>
-                <ul className="text-xs text-muted-foreground font-body space-y-1 ml-4 list-disc">
-                  <li><strong>Helper:</strong> Asiste a los jugadores y resuelve dudas básicas.</li>
-                  <li><strong>Trial Mod:</strong> Moderador en período de prueba, con funciones limitadas.</li>
-                  <li><strong>Moderador:</strong> Encargado de la moderación activa y el control del servidor.</li>
-                </ul>
-                <p className="text-xs text-muted-foreground font-body mt-2"><strong>Requisitos:</strong> +14 años, actitud responsable, conocer el servidor, sin sanciones recientes, micrófono obligatorio.</p>
-              </div>
-            )}
-
-            {selectedForm === "discord" && (
-              <div className="mt-4 p-3 bg-accent/10 rounded-lg border border-accent/20">
-                <p className="text-xs text-muted-foreground font-body">
-                  <strong>Requisitos:</strong> +13 años, actitud respetuosa, conocimientos básicos del servidor, sin sanciones recientes, micrófono obligatorio.
-                </p>
-              </div>
-            )}
-
             <p className="text-xs text-destructive mt-3 font-body">* Indica que la pregunta es obligatoria</p>
           </div>
 
-          {/* Questions */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {questions.map((q, i) => (
-              <motion.div
-                key={q.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.03 }}
-                className="card-medieval p-5"
-              >
+              <motion.div key={q.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }} className="card-medieval p-5">
                 <label className="font-heading font-semibold text-sm mb-3 block">
                   {q.label} {q.required && <span className="text-destructive">*</span>}
                 </label>
 
-                {q.type === "text" && (
+                {(q.type === "text" || q.type === "url" || q.type === "number") && (
                   <input
-                    type="text"
-                    value={answers[q.id] || ""}
+                    type={q.type === "url" ? "url" : q.type === "number" ? "number" : "text"}
+                    value={(answers[q.id] as string) || ""}
                     onChange={(e) => setAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))}
-                    className="w-full px-4 py-2.5 rounded-lg bg-background border border-border font-body text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
-                    placeholder="Tu respuesta"
+                    className="w-full px-4 py-2.5 rounded-lg bg-background border border-border font-body text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder={q.type === "url" ? "https://..." : "Tu respuesta"}
                   />
                 )}
 
                 {q.type === "textarea" && (
                   <textarea
-                    value={answers[q.id] || ""}
+                    value={(answers[q.id] as string) || ""}
                     onChange={(e) => setAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))}
                     rows={3}
-                    className="w-full px-4 py-2.5 rounded-lg bg-background border border-border font-body text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all resize-none"
+                    className="w-full px-4 py-2.5 rounded-lg bg-background border border-border font-body text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
                     placeholder="Tu respuesta"
                   />
                 )}
@@ -344,37 +389,30 @@ const Aplicaciones = () => {
                           {answers[q.id] === opt && <div className="w-2.5 h-2.5 rounded-full bg-primary-foreground" />}
                         </div>
                         <span className="font-body text-sm">{opt}</span>
-                        <input
-                          type="radio"
-                          name={q.id}
-                          value={opt}
-                          checked={answers[q.id] === opt}
-                          onChange={() => setAnswers((prev) => ({ ...prev, [q.id]: opt }))}
-                          className="sr-only"
-                        />
+                        <input type="radio" name={q.id} value={opt} checked={answers[q.id] === opt} onChange={() => setAnswers((prev) => ({ ...prev, [q.id]: opt }))} className="sr-only" />
                       </label>
                     ))}
                   </div>
+                )}
+
+                {q.type === "checkbox" && (
+                  <label className="flex items-start gap-3 cursor-pointer group">
+                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors mt-0.5 shrink-0 ${answers[q.id] === true ? "border-primary bg-primary" : "border-border group-hover:border-primary/50"}`}>
+                      {answers[q.id] === true && <CheckCircle2 size={14} className="text-primary-foreground" />}
+                    </div>
+                    <span className="font-body text-xs text-muted-foreground">Acepto y entiendo lo expuesto arriba.</span>
+                    <input type="checkbox" checked={answers[q.id] === true} onChange={(e) => setAnswers((prev) => ({ ...prev, [q.id]: e.target.checked }))} className="sr-only" />
+                  </label>
                 )}
               </motion.div>
             ))}
 
             <div className="pt-4">
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full py-3 bg-primary text-primary-foreground font-heading font-bold rounded-lg flex items-center justify-center gap-2 hover:opacity-90 transition disabled:opacity-50"
-              >
+              <button type="submit" disabled={submitting} className="w-full py-3 bg-primary text-primary-foreground font-heading font-bold rounded-lg flex items-center justify-center gap-2 hover:opacity-90 transition disabled:opacity-50">
                 {submitting ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                    Enviando...
-                  </>
+                  <><div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" /> Enviando...</>
                 ) : (
-                  <>
-                    <Send size={18} />
-                    Enviar Solicitud
-                  </>
+                  <><Send size={18} /> Enviar Solicitud</>
                 )}
               </button>
             </div>
