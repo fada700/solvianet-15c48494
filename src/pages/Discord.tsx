@@ -14,15 +14,9 @@ const Discord = () => {
         <p className="text-muted-foreground font-body mb-8 max-w-xl mx-auto">
           Únete a nuestra comunidad en Discord para estar al tanto de todo, hablar con el staff y conocer nuevos amigos.
         </p>
-        
-          href="https://discord.gg/y4ajWpbGd5"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-block px-8 py-3 bg-primary text-primary-foreground font-heading font-bold rounded-xl glow-gold hover:opacity-90 transition text-lg mb-12"
-        >
+        <a href="https://discord.gg/y4ajWpbGd5" target="_blank" rel="noopener noreferrer" className="inline-block px-8 py-3 bg-primary text-primary-foreground font-heading font-bold rounded-xl glow-gold hover:opacity-90 transition text-lg mb-12">
           Unirse al Discord
         </a>
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
           <div className="flex flex-col gap-3">
             <h2 className="font-heading text-xl font-bold text-gradient-gold text-center">SolvianMC</h2>
@@ -37,7 +31,6 @@ const Discord = () => {
               />
             </div>
           </div>
-
           <div className="flex flex-col gap-3">
             <h2 className="font-heading text-xl font-bold text-gradient-gold text-center">Ally — Chillied</h2>
             <div className="card-medieval overflow-hidden rounded-xl">
