@@ -36,7 +36,7 @@ const Navbar = () => {
 
   const renderLink = (link: { name: string; path: string; external?: boolean }, onClick?: () => void) =>
     link.external ? (
-      
+      <a
         key={link.name}
         href={link.path}
         target="_blank"
