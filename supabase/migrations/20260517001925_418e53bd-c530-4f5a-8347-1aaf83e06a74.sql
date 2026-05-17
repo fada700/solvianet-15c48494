@@ -1,0 +1,2 @@
+ALTER TABLE public.staff_applications DROP CONSTRAINT IF EXISTS staff_applications_form_type_check;
+ALTER TABLE public.staff_applications ADD CONSTRAINT staff_applications_form_type_check CHECK (form_type = ANY (ARRAY['minecraft'::text, 'discord'::text, 'creador'::text]));
