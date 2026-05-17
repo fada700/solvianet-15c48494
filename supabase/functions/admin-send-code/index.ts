@@ -1,4 +1,4 @@
-// Generates a 6-digit verification code, stores it, and emails it via Resend.
+// Generates a 6-digit verification code, stores it, and emails it via Brevo.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
@@ -8,14 +8,14 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const BREVO_API_KEY = Deno.env.get("BREVO_API_KEY");
 const FROM_EMAIL = Deno.env.get("FROM_EMAIL") || "admin@solvianmc.net";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
-    if (!RESEND_API_KEY) {
-      return new Response(JSON.stringify({ error: "RESEND_API_KEY not configured" }), {
+    if (!BREVO_API_KEY) {
+      return new Response(JSON.stringify({ error: "BREVO_API_KEY not configured" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -26,6 +26,7 @@ Deno.serve(async (req) => {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
     const userClient = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -42,7 +43,6 @@ Deno.serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // Must be admin in user_roles (set by discord-auth admin mode)
     const { data: roleRow } = await admin
       .from("user_roles").select("id")
       .eq("user_id", user.id).eq("role", "admin").maybeSingle();
@@ -52,7 +52,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Lockout check
     const { data: existing } = await admin
       .from("admin_verification_codes").select("*")
       .eq("user_id", user.id).maybeSingle();
@@ -83,22 +82,23 @@ Deno.serve(async (req) => {
       </div>
     `;
 
-    const r = await fetch("https://api.resend.com/emails", {
+    const r = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${RESEND_API_KEY}`,
+        "api-key": BREVO_API_KEY,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: `SolvianMC <${FROM_EMAIL}>`,
-        to: [email],
+        sender: { name: "SolvianMC", email: FROM_EMAIL },
+        to: [{ email }],
         subject: "Código de acceso — SolvianMC",
-        html,
+        htmlContent: html,
       }),
     });
+
     if (!r.ok) {
       const t = await r.text();
-      console.error("Resend error:", t);
+      console.error("Brevo error:", t);
       return new Response(JSON.stringify({ error: "Failed to send email", detail: t }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
