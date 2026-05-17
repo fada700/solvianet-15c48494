@@ -1,0 +1,116 @@
+// Generates a 6-digit verification code, stores it, and emails it via Resend.
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const FROM_EMAIL = Deno.env.get("FROM_EMAIL") || "admin@solvianmc.net";
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  try {
+    if (!RESEND_API_KEY) {
+      return new Response(JSON.stringify({ error: "RESEND_API_KEY not configured" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const userClient = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: userData, error: uErr } = await userClient.auth.getUser();
+    if (uErr || !userData.user) {
+      return new Response(JSON.stringify({ error: "Invalid session" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const user = userData.user;
+    const email = user.email!;
+
+    const admin = createClient(SUPABASE_URL, SERVICE_KEY, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+
+    // Must be admin in user_roles (set by discord-auth admin mode)
+    const { data: roleRow } = await admin
+      .from("user_roles").select("id")
+      .eq("user_id", user.id).eq("role", "admin").maybeSingle();
+    if (!roleRow) {
+      return new Response(JSON.stringify({ error: "Not authorized" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Lockout check
+    const { data: existing } = await admin
+      .from("admin_verification_codes").select("*")
+      .eq("user_id", user.id).maybeSingle();
+    if (existing?.locked_until && new Date(existing.locked_until) > new Date()) {
+      return new Response(JSON.stringify({
+        error: "locked",
+        locked_until: existing.locked_until,
+      }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+
+    await admin.from("admin_verification_codes").upsert({
+      user_id: user.id,
+      code,
+      expires_at: expiresAt,
+      attempts: 0,
+      locked_until: null,
+    }, { onConflict: "user_id" });
+
+    const html = `
+      <div style="font-family:system-ui,sans-serif;max-width:480px;margin:0 auto;padding:24px;background:#1c1410;color:#f5e6c8;border-radius:12px;border:1px solid #d4a017">
+        <h2 style="color:#d4a017;font-family:Georgia,serif;margin:0 0 12px">SolvianMC — Panel Admin</h2>
+        <p style="margin:0 0 12px">Tu código de acceso es:</p>
+        <p style="font-size:36px;font-weight:bold;letter-spacing:8px;color:#d4a017;text-align:center;background:rgba(212,160,23,0.1);padding:16px;border-radius:8px;margin:16px 0">${code}</p>
+        <p style="margin:12px 0 0;font-size:13px;color:#aa9477">Expira en 10 minutos. Si no fuiste tú, ignora este mensaje.</p>
+      </div>
+    `;
+
+    const r = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: `SolvianMC <${FROM_EMAIL}>`,
+        to: [email],
+        subject: "Código de acceso — SolvianMC",
+        html,
+      }),
+    });
+    if (!r.ok) {
+      const t = await r.text();
+      console.error("Resend error:", t);
+      return new Response(JSON.stringify({ error: "Failed to send email", detail: t }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    return new Response(JSON.stringify({ ok: true }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (e) {
+    console.error("admin-send-code error:", e);
+    return new Response(JSON.stringify({ error: String(e) }), {
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+});

@@ -12,6 +12,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useServerStatus } from "@/hooks/useServerStatus";
 import { motion, AnimatePresence } from "framer-motion";
+import AdminGate from "@/components/AdminGate";
+
+const TWO_FA_KEY = "admin_2fa_verified_at";
+const TWO_FA_TTL_MS = 60 * 60 * 1000;
 
 const GAME_CATEGORIES = [
   { id: "global", label: "Global" },
@@ -109,9 +113,9 @@ const StatCard = ({ icon: Icon, value, label, color = "text-primary" }: { icon: 
   </div>
 );
 
-const Admin = () => {
+const AdminInner = () => {
   const navigate = useNavigate();
-  const { user, loading: authLoading, isAdmin, isGoogleUser, signOut } = useAuth();
+  const { user, loading: authLoading, isAdmin, signOut } = useAuth();
   const server = useServerStatus();
   const [updates, setUpdates] = useState<Update[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -154,7 +158,7 @@ const Admin = () => {
   useEffect(() => {
     if (authLoading) return;
     if (!user) { navigate("/login"); return; }
-    if (!isAdmin || isGoogleUser) {
+    if (!isAdmin) {
       toast.error("No tienes permisos para acceder al panel de administración");
       navigate("/");
       return;
@@ -1186,6 +1190,15 @@ const Admin = () => {
       </div>
     </Layout>
   );
+};
+
+const Admin = () => {
+  const [verified, setVerified] = useState(() => {
+    const v = sessionStorage.getItem(TWO_FA_KEY);
+    return !!(v && Date.now() - parseInt(v, 10) < TWO_FA_TTL_MS);
+  });
+  if (!verified) return <AdminGate onVerified={() => setVerified(true)} />;
+  return <AdminInner />;
 };
 
 export default Admin;
