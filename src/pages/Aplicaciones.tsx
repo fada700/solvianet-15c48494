@@ -174,7 +174,8 @@ const Aplicaciones = () => {
     });
 
     if (error) {
-      toast.error("Error al enviar la solicitud. Intenta de nuevo.");
+      console.error("[Aplicaciones] insert error:", error, { form_type: selectedForm, finalAnswers });
+      toast.error(`Error al enviar: ${error.message}`);
     } else {
       setSubmitted(true);
       toast.success("¡Solicitud enviada correctamente!");
