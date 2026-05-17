@@ -143,8 +143,8 @@ const Navbar = () => {
           )}
         </div>
 
-        {/* Mobile toggle */}
-        <button onClick={() => setOpen(!open)} className="md:hidden text-foreground">
+        {/* Mobile toggle — dorado para que resalte */}
+        <button onClick={() => setOpen(!open)} className="md:hidden text-[#d4a017]">
           {open ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
@@ -160,7 +160,7 @@ const Navbar = () => {
             <div>
               <button
                 onClick={() => setMobileComOpen(!mobileComOpen)}
-                className="w-full flex items-center justify-between py-2 text-sm font-body font-semibold text-muted-foreground"
+                className="w-full flex items-center justify-between py-2 text-sm font-body font-semibold text-[#d4a017]"
               >
                 Comunidad
                 <ChevronDown size={14} className={`transition-transform ${mobileComOpen ? "rotate-180" : ""}`} />
