@@ -11,6 +11,7 @@ const mainLinks = [
   { name: "Actualizaciones", path: "/actualizaciones", external: false },
   { name: "Wiki", path: "/wiki", external: false },
   { name: "Tienda", path: "https://tienda.solvianmc.net", external: true },
+  { name: "Aplicaciones", path: "/aplicaciones", external: false },
 ];
 
 const comunidadLinks = [
@@ -35,7 +36,7 @@ const Navbar = () => {
 
   const renderLink = (link: { name: string; path: string; external?: boolean }, onClick?: () => void) =>
     link.external ? (
-      <a
+      
         key={link.name}
         href={link.path}
         target="_blank"
