@@ -8,13 +8,14 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const BREVO_API_KEY = Deno.env.get("RESEND_API_KEY");
+const BREVO_API_KEY = Deno.env.get("BREVO_API_KEY"); // ✅ CHANGED from RESEND_API_KEY
 const FROM_EMAIL = Deno.env.get("FROM_EMAIL") || "admin@solvianmc.net";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
     if (!BREVO_API_KEY) {
+      console.error("BREVO_API_KEY not configured");
       return new Response(JSON.stringify({ error: "BREVO_API_KEY not configured" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -22,6 +23,7 @@ Deno.serve(async (req) => {
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
+      console.error("No Authorization header");
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -32,6 +34,7 @@ Deno.serve(async (req) => {
     });
     const { data: userData, error: uErr } = await userClient.auth.getUser();
     if (uErr || !userData.user) {
+      console.error("Invalid session:", uErr);
       return new Response(JSON.stringify({ error: "Invalid session" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -47,6 +50,7 @@ Deno.serve(async (req) => {
       .from("user_roles").select("id")
       .eq("user_id", user.id).eq("role", "admin").maybeSingle();
     if (!roleRow) {
+      console.error("User not admin:", user.id);
       return new Response(JSON.stringify({ error: "Not authorized" }), {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -56,6 +60,7 @@ Deno.serve(async (req) => {
       .from("admin_verification_codes").select("*")
       .eq("user_id", user.id).maybeSingle();
     if (existing?.locked_until && new Date(existing.locked_until) > new Date()) {
+      console.warn("User locked:", user.id, existing.locked_until);
       return new Response(JSON.stringify({
         error: "locked",
         locked_until: existing.locked_until,
@@ -65,13 +70,20 @@ Deno.serve(async (req) => {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
-    await admin.from("admin_verification_codes").upsert({
+    const { error: dbError } = await admin.from("admin_verification_codes").upsert({
       user_id: user.id,
-      code,
+      code: String(code),
       expires_at: expiresAt,
       attempts: 0,
       locked_until: null,
     }, { onConflict: "user_id" });
+
+    if (dbError) {
+      console.error("Database error storing code:", dbError);
+      return new Response(JSON.stringify({ error: "Failed to store code", detail: dbError.message }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const html = `
       <div style="font-family:system-ui,sans-serif;max-width:480px;margin:0 auto;padding:24px;background:#1c1410;color:#f5e6c8;border-radius:12px;border:1px solid #d4a017">
@@ -81,6 +93,8 @@ Deno.serve(async (req) => {
         <p style="margin:12px 0 0;font-size:13px;color:#aa9477">Expira en 10 minutos. Si no fuiste tú, ignora este mensaje.</p>
       </div>
     `;
+
+    console.log(`Sending verification code to ${email} via Brevo`);
 
     const r = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
@@ -98,12 +112,17 @@ Deno.serve(async (req) => {
 
     if (!r.ok) {
       const t = await r.text();
-      console.error("Brevo error:", t);
-      return new Response(JSON.stringify({ error: "Failed to send email", detail: t }), {
+      console.error(`Brevo error (${r.status}):`, t);
+      return new Response(JSON.stringify({ 
+        error: "Failed to send email", 
+        detail: t, 
+        status: r.status 
+      }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    console.log(`✅ Code sent successfully to ${email}`);
     return new Response(JSON.stringify({ ok: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
