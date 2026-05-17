@@ -1192,4 +1192,13 @@ const AdminInner = () => {
   );
 };
 
+const Admin = () => {
+  const [verified, setVerified] = useState(() => {
+    const v = sessionStorage.getItem(TWO_FA_KEY);
+    return !!(v && Date.now() - parseInt(v, 10) < TWO_FA_TTL_MS);
+  });
+  if (!verified) return <AdminGate onVerified={() => setVerified(true)} />;
+  return <AdminInner />;
+};
+
 export default Admin;
