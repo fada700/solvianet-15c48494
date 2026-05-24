@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { motion } from "framer-motion";
 import { Gamepad2, MessageCircle, Video, Send, CheckCircle2, Lock, Twitch, Youtube, Music2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-import logo from "@/assets/solvianmc.png";
+import logo from "@/assets/SOLVIAN.png";
 
 type FormType = "minecraft" | "discord" | "creador";
 type CreatorType = "streamer" | "youtuber" | "tiktoker" | "media";
