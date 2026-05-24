@@ -1,6 +1,6 @@
 import Layout from "@/components/Layout";
 import { Vote } from "lucide-react";
-import logo from "@/assets/solvianmc.png";
+import logo from "@/assets/SOLVIAN.png";
 
 const Votar = () => (
   <Layout>
