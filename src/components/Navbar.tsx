@@ -4,7 +4,7 @@ import { Menu, X, LogOut, ChevronDown, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
-import logo from "@/assets/solvianmc.png";
+import logo from "@/assets/SOLVIAN.png";
 
 const mainLinks = [
   { name: "Inicio", path: "/", external: false },
