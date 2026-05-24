@@ -8,7 +8,7 @@ import AnimatedSection from "@/components/AnimatedSection";
 import GoldParticles from "@/components/GoldParticles";
 import { useServerStatus } from "@/hooks/useServerStatus";
 import heroBg from "@/assets/hero-bg.jpg";
-import logo from "@/assets/solvianmc.png";
+import logo from "@/assets/SOLVIAN.png";
 import avatarSoyNulled from "@/assets/avatar-soynulled.png";
 import avatarFelixDevYT from "@/assets/avatar-felixdevyt.png";
 import avatarLuisDev from "@/assets/avatar-luisdev.png";
