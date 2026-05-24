@@ -1,4 +1,4 @@
-import logo from "@/assets/solvianmc.png";
+import logo from "@/assets/SOLVIAN.png";
 
 const Footer = () => (
   <footer className="border-t-2 border-border bg-card py-8 mt-auto">
