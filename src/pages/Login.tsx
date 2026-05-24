@@ -4,7 +4,7 @@ import Layout from "@/components/Layout";
 import { Shield } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { motion } from "framer-motion";
-import logo from "@/assets/solvianmc-logo.png";
+import logo from "@/assets/SOLVIAN.png";
 import GoldParticles from "@/components/GoldParticles";
 
 const DiscordIcon = ({ size = 20 }: { size?: number }) => (
